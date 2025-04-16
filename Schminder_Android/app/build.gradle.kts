@@ -47,6 +47,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material) // Can keep for some design compat
+    implementation(libs.androidx.material.icons.extended)
+
 
     // 🧱 Jetpack Compose core libraries
     implementation(libs.androidx.activity.compose)

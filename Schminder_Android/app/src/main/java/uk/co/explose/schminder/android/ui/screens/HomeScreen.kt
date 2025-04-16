@@ -9,13 +9,25 @@ import androidx.navigation.NavHostController
 
 @Composable
 fun HomeScreen(navController: NavHostController) {
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
         Text("Welcome to Schminder")
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = { navController.navigate("mockup") }) {
+            Text("Go to mockup")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         Button(onClick = { navController.navigate("settings") }) {
             Text("Go to Settings")
         }
     }
 }
+
 
