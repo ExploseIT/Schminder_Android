@@ -1,33 +1,123 @@
 package uk.co.explose.schminder.android.ui.screens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.util.Locale
+
 
 @Composable
 fun HomeScreen(navController: NavHostController) {
+    val today = remember { LocalDate.now() }
+    var selectedDate by remember { mutableStateOf(today) }
+
+    val startOfWeek = today.with(DayOfWeek.MONDAY)
+    val daysOfWeek = DayOfWeek.values().toList()
+
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
+            .verticalScroll(scrollState)
     ) {
-        Text("Welcome to Schminder")
+        // Row 1: Day names
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            daysOfWeek.forEach { day ->
+                Text(
+                    text = day.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault()),
+                    modifier = Modifier.weight(1f),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        Button(onClick = { navController.navigate("mockup") }) {
-            Text("Go to mockup")
+        // Row 2: Scrollable Dates
+        Row(
+            modifier = Modifier
+                .horizontalScroll(rememberScrollState())
+                .fillMaxWidth()
+        ) {
+            for (i in 0 until 7) {
+                val date = startOfWeek.plusDays(i.toLong())
+                val isSelected = date == selectedDate
+                val isToday = date == today
+
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                        .clickable { selectedDate = date },
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = when {
+                            isSelected -> MaterialTheme.colorScheme.primary
+                            else -> Color.Transparent
+                        },
+                        modifier = Modifier.size(36.dp),
+                        border = if (isToday && !isSelected)
+                            BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                        else null
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = date.dayOfMonth.toString(),
+                                color = if (isSelected) Color.White else Color.Black,
+                                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = { navController.navigate("settings") }) {
-            Text("Go to Settings")
+        // Row 3: Selected full date
+        Text(
+            text = if (selectedDate == today)
+                "Today, ${selectedDate.dayOfMonth} ${selectedDate.month.name.take(3).capitalize()}"
+            else
+                selectedDate.format(java.time.format.DateTimeFormatter.ofPattern("EEE, d MMM")),
+            style = MaterialTheme.typography.bodyLarge
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Add medication button
+        Button(
+            onClick = { navController.navigate("add_med") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 72.dp)
+        ) {
+            Text("Add medication")
         }
     }
 }
-
-

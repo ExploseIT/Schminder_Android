@@ -17,7 +17,12 @@ import uk.co.explose.schminder.android.ui.screens.SettingsScreen
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.unit.dp
+import uk.co.explose.schminder.android.ui.components.AppBottomBar
+import uk.co.explose.schminder.android.ui.components.AppTopBar
+import uk.co.explose.schminder.android.ui.screens.AddMedScreen
 import uk.co.explose.schminder.android.ui.screens.ManageScreen
+import uk.co.explose.schminder.android.ui.screens.MedicationsScreen
+import uk.co.explose.schminder.android.ui.screens.UpdatesScreen
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,11 +31,8 @@ fun SchminderApp() {
     val navController = rememberNavController()
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Schminder") }
-            )
-        },
+        topBar = { AppTopBar(currentRoute = "mockup", navController) },
+        bottomBar = { AppBottomBar(currentRoute = "mockup", navController) },
         floatingActionButton = {
             FloatingActionButton(onClick = {
             },
@@ -49,6 +51,9 @@ fun SchminderApp() {
             composable("home") { HomeScreen(navController) }
             composable("settings") { SettingsScreen(navController) }
 
+            composable("add_med") { AddMedScreen(navController) }
+            composable("updates") { UpdatesScreen(navController) }
+            composable("medications") { MedicationsScreen(navController) }
             // 👇 New composable for the mockup screen
             composable("mockup") { ManageScreen(navController) }
         }

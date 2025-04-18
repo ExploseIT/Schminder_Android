@@ -13,20 +13,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import uk.co.explose.schminder.android.ui.components.ManageItem
-import uk.co.explose.schminder.android.ui.components.SchminderBottomBar
+import uk.co.explose.schminder.android.ui.components.AppBottomBar
 import uk.co.explose.schminder.android.ui.components.SectionHeader
 
 
 @Composable
 fun ManageScreen(navController: NavHostController) {
     Scaffold(
-        bottomBar = { SchminderBottomBar(currentRoute = "mockup", navController) }
+        //bottomBar = { AppBottomBar(currentRoute = "mockup", navController) }
     ) { innerPadding ->
         LazyColumn(modifier = Modifier.padding(innerPadding)) {
             item { ManageItem(icon = Icons.Filled.Person, label = "Doctors") { /* nav */ } }
             item { ManageItem(icon = Icons.Filled.RestoreFromTrash, label = "Refills") { /* nav */ } }
             item { SectionHeader("Settings") }
-            item { ManageItem(icon = Icons.Filled.Settings, label = "App Settings") { /* nav */ } }
+            item { ManageItem(icon = Icons.Filled.Settings, label = "App Settings") { navController.navigate("settings") } }
             item { ManageItem(icon = Icons.Filled.Lock, label = "Manage Email & Password") { /* nav */ } }
             item { ManageItem(icon = Icons.Filled.Notifications, label = "Reminders Troubleshooting") { /* nav */ } }
         }
