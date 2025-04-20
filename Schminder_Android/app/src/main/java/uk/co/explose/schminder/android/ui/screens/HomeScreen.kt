@@ -20,6 +20,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import uk.co.explose.schminder.android.core.GlobalAnalytics
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.Locale
@@ -27,6 +28,7 @@ import java.util.Locale
 
 @Composable
 fun HomeScreen(navController: NavHostController) {
+    GlobalAnalytics.logEvent("test_event", mapOf("origin" to "Schminder - Home"))
     val today = remember { LocalDate.now() }
     var selectedDate by remember { mutableStateOf(today) }
 

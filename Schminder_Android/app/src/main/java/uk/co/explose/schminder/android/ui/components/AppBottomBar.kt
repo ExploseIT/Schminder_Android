@@ -10,9 +10,9 @@ import androidx.navigation.NavHostController
 
 @Composable
 fun AppBottomBar(currentRoute: String, navController: NavHostController) {
-    val items = listOf("home", "updates", "medications", "mockup")
+    val items = listOf("home", "plan", "medications", "mockup")
     val icons = listOf(Icons.Default.Home, Icons.Outlined.SyncAlt, Icons.Default.Medication, Icons.Default.Menu)
-    val labels = listOf("Home", "Updates", "Medications", "Manage")
+    val labels = listOf("Home", "Plan", "Medications", "Manage")
 
     NavigationBar {
         items.forEachIndexed { index, route ->

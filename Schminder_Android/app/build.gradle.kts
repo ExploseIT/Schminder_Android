@@ -1,6 +1,10 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    // Existing plugins
+    alias(libs.plugins.compose.compiler)
+    // Add the Google services Gradle plugin
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -9,10 +13,10 @@ android {
 
     defaultConfig {
         applicationId = "uk.co.explose.schminder.android"
-        minSdk = 24
+        minSdk = 27
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.0.1.2"
+        versionCode = 4
+        versionName = "1.0.1.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -21,9 +25,11 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
+            buildConfigField( "String", "BASE_URL", "\"https://8703-82-34-165-255.ngrok-free.app/schminder_net/\"")
         }
         release {
             isMinifyEnabled = false
+            buildConfigField( "String", "BASE_URL", "\"https://schminder.co.uk/\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -41,6 +47,7 @@ android {
     buildFeatures {
         viewBinding = true
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.10" // or latest
@@ -56,6 +63,17 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.material.icons.extended)
 
+// build.gradle (app)
+    implementation(libs.retrofit)
+    implementation(libs.converter.moshi) // or Gson
+
+// Import the Firebase BoM
+    implementation(platform("com.google.firebase:firebase-bom:33.12.0"))
+
+
+    // TODO: Add the dependencies for Firebase products you want to use
+    // When using the BoM, don't specify versions in Firebase dependencies
+    implementation("com.google.firebase:firebase-analytics")
 
 
     // 🧱 Jetpack Compose core libraries
