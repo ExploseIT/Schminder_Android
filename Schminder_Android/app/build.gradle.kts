@@ -9,14 +9,14 @@ plugins {
 
 android {
     namespace = "uk.co.explose.schminder.android"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "uk.co.explose.schminder.android"
         minSdk = 27
-        targetSdk = 34
-        versionCode = 4
-        versionName = "1.0.1.4"
+        targetSdk = 36
+        versionCode = 5
+        versionName = "1.0.1.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -37,12 +37,12 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
         isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
     buildFeatures {
         viewBinding = true
@@ -55,6 +55,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidbrowserhelper)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     implementation(libs.androidx.core.ktx)
@@ -85,6 +86,17 @@ dependencies {
 
     // 🔁 Navigation for Compose
     implementation(libs.androidx.navigation.compose)
+
+    // OCR ML Kit
+    implementation ("androidx.camera:camera-core:1.3.1")
+    implementation ("androidx.camera:camera-camera2:1.3.1")
+    implementation ("androidx.camera:camera-lifecycle:1.3.1")
+    implementation ("androidx.camera:camera-view:1.3.1")
+
+    implementation ("com.google.mlkit:text-recognition:16.0.0")
+
+    implementation ("com.google.accompanist:accompanist-permissions:0.35.0-alpha")
+
 
     // 🧪 Testing
     testImplementation(libs.junit)

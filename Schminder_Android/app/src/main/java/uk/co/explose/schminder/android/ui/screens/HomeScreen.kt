@@ -112,6 +112,7 @@ fun HomeScreen(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        /*
         // Add medication button
         Button(
             onClick = { navController.navigate("add_med") },
@@ -120,6 +121,6 @@ fun HomeScreen(navController: NavHostController) {
                 .padding(bottom = 72.dp)
         ) {
             Text("Add medication")
-        }
+        } */
     }
 }
