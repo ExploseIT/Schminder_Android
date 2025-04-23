@@ -15,8 +15,8 @@ android {
         applicationId = "uk.co.explose.schminder.android"
         minSdk = 27
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.0.1.5"
+        versionCode = 6
+        versionName = "1.0.1.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -25,7 +25,7 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
-            buildConfigField( "String", "BASE_URL", "\"https://8703-82-34-165-255.ngrok-free.app/schminder_net/\"")
+            buildConfigField( "String", "BASE_URL", "\"https://explose.ngrok.app/schminder_net/\"")
         }
         release {
             isMinifyEnabled = false
@@ -67,6 +67,8 @@ dependencies {
 // build.gradle (app)
     implementation(libs.retrofit)
     implementation(libs.converter.moshi) // or Gson
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
 
 // Import the Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:33.12.0"))
@@ -76,6 +78,8 @@ dependencies {
     // When using the BoM, don't specify versions in Firebase dependencies
     implementation("com.google.firebase:firebase-analytics")
 
+    // Firebase Authentication
+    implementation("com.google.firebase:firebase-auth")
 
     // 🧱 Jetpack Compose core libraries
     implementation(libs.androidx.activity.compose)
