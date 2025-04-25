@@ -6,13 +6,15 @@ import android.content.Context
 import android.util.Log
 import com.google.firebase.FirebaseApp
 import android.os.Process
-import uk.co.explose.schminder.android.core.GlobalAnalytics
+import uk.co.explose.schminder.android.core.AppGlobal
 
 class SchminderApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        GlobalAnalytics.init(this)
+        AppGlobal.init(this)
+
+        AppGlobal.doFirebaseInit(this)
     }
 }
 

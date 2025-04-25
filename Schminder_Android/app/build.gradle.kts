@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.compose.compiler)
     // Add the Google services Gradle plugin
     id("com.google.gms.google-services")
+    kotlin("kapt")
 }
 
 android {
@@ -15,8 +16,8 @@ android {
         applicationId = "uk.co.explose.schminder.android"
         minSdk = 27
         targetSdk = 36
-        versionCode = 6
-        versionName = "1.0.1.6"
+        versionCode = 7
+        versionName = "1.0.1.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -73,6 +74,8 @@ dependencies {
 // Import the Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:33.12.0"))
 
+    implementation("androidx.room:room-runtime:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
 
     // TODO: Add the dependencies for Firebase products you want to use
     // When using the BoM, don't specify versions in Firebase dependencies

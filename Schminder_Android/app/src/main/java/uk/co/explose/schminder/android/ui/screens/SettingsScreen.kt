@@ -15,7 +15,7 @@ import uk.co.explose.schminder.android.model.server_version.c_ServerVersion
 import uk.co.explose.schminder.android.network.RetrofitClient
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import uk.co.explose.schminder.android.core.GlobalAnalytics
+import uk.co.explose.schminder.android.core.AppGlobal
 
 @Composable
 fun SettingsScreen(navController: NavHostController) {
@@ -27,7 +27,9 @@ fun SettingsScreen(navController: NavHostController) {
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    GlobalAnalytics.logEvent("test_event", mapOf("origin" to "Schminder - Settings"))
+    AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - Settings"))
+
+    val medCount  = AppGlobal.medsGetCount()
 
     LaunchedEffect(Unit) {
         try {
@@ -55,9 +57,18 @@ fun SettingsScreen(navController: NavHostController) {
         Text("App Version: $versionName", style = MaterialTheme.typography.bodyLarge)
         Spacer(modifier = Modifier.height(16.dp))
         Text(
+            text = "Meds Loaded: $medCount",
+            style = MaterialTheme.typography.bodyLarge
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
             text = "Server Version: ${serverVersion?.sv_version ?: "Loading..."}",
             style = MaterialTheme.typography.bodyLarge
         )
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(onClick = { AppGlobal.doFirebaseInit(context) }) {
+            Text("Reload data")
+        }
         Spacer(modifier = Modifier.height(24.dp))
         Button(onClick = { navController.navigateUp() }) {
             Text("Back")

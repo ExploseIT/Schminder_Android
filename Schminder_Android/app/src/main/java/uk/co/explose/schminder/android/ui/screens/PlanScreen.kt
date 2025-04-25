@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
-import uk.co.explose.schminder.android.core.GlobalAnalytics
+import uk.co.explose.schminder.android.core.AppGlobal
 
 data class RefillItem(
     val id: Int,
@@ -19,7 +19,7 @@ data class RefillItem(
 
 @Composable
 fun PlanScreen(navController: NavHostController) {
-    GlobalAnalytics.logEvent("test_event", mapOf("origin" to "Schminder - Plan"))
+    AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - Plan"))
     val refillList = remember {
         listOf(
             RefillItem(1, "Stay on top of your prescription refills", "Track your meds stock and set refill reminders...", true),

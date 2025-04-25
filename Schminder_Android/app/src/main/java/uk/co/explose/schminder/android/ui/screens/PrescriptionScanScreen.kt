@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.pm.ActivityInfo
 
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Modifier
@@ -20,6 +21,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,7 +30,12 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -47,8 +54,12 @@ import androidx.navigation.NavController
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import uk.co.explose.schminder.android.FabItem
+import uk.co.explose.schminder.android.core.AppGlobal
+import uk.co.explose.schminder.android.model.mpp.m_med_indiv
 import uk.co.explose.schminder.android.model.mpp.m_medication
 
+@ExperimentalGetImage
 @SuppressLint("ContextCastToActivity")
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -57,26 +68,26 @@ fun PrescriptionScanScreen(navController: NavController) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val activity = LocalContext.current as? Activity
 
-    LockOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
+    LockOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
 
-    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED //ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
     val outputText = remember { mutableStateOf("Scan a prescription...") }
-    val parsedMeds = remember { mutableStateOf<List<m_medication>>(emptyList()) }
+    val parsedMeds = remember { mutableStateOf<List<m_med_indiv>>(emptyList()) }
     val scanComplete = remember { mutableStateOf(false) }
 
     val cameraPermission = android.Manifest.permission.CAMERA
     val permissionState = rememberPermissionState(permission = cameraPermission)
 
     val previewView = remember { PreviewView(context) }
-
+    val knownMeds = AppGlobal.doMedsIndivInfoRead()
     LaunchedEffect(Unit) {
-        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
     }
 
     DisposableEffect(Unit) {
         onDispose {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }
     Box(modifier = Modifier.fillMaxSize()) {
@@ -110,11 +121,22 @@ fun PrescriptionScanScreen(navController: NavController) {
                             recognizer.process(inputImage)
                                 .addOnSuccessListener { visionText ->
                                     val rawText = visionText.text
-                                    val meds = parseMedicationsFromOcr(rawText)
-                                    if (meds.size >= 1) {
-                                        outputText.value = rawText
-                                        parsedMeds.value = meds
-                                        scanComplete.value = true
+                                    if (knownMeds != null) {
+                                        val newMeds = parseMedicationsFromOcr(
+                                            rawText,
+                                            knownMeds.med_indiv_list
+                                        )
+                                        val existingMeds = parsedMeds.value
+
+                                        val uniqueMeds = newMeds.filter { newMed ->
+                                            existingMeds.none { it.med_id == newMed.med_id }
+                                        }
+
+                                        if (uniqueMeds.isNotEmpty()) {
+                                            outputText.value = rawText
+                                            parsedMeds.value = existingMeds + uniqueMeds
+                                            // scanComplete.value = true
+                                        }
                                     }
                                 }
                                 .addOnFailureListener {
@@ -157,7 +179,7 @@ fun PrescriptionScanScreen(navController: NavController) {
         }
 
         // Bottom overlay UI (displayed only if scan is complete)
-        if (scanComplete.value) {
+        if (scanComplete.value || true) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -169,80 +191,86 @@ fun PrescriptionScanScreen(navController: NavController) {
             ) {
                 Text(text = "Detected Medications:", color = Color.White)
                 parsedMeds.value.forEach { med ->
-                    Text("• ${med.med_name}", color = Color.White)
-                    Text("  Route: ${med.med_route}", color = Color.White)
-                    Text("  Dosage: ${med.med_dosage}", color = Color.White)
-                    Text("  Frequency: ${med.med_frequency}", color = Color.White)
-                    Text("  Start: ${med.med_startDate}", color = Color.White)
-                    med.med_stopAfter?.let {
-                        Text("  Stop After: $it", color = Color.White)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "• ${med.med_name}",
+                            color = Color.White,
+                            modifier = Modifier.weight(1f)
+                        )
+/*
+                        IconButton(onClick = {
+                            navController.navigate("add_med")
+                        }) {
+                            Icon(Icons.Default.Add,
+                                contentDescription = "Add",
+                                tint = Color.White)
+                        }
+*/
+                        IconButton(onClick = {
+                            // Remove this item from the list
+                            parsedMeds.value = parsedMeds.value.filterNot { it.med_id == med.med_id }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Remove,
+                                contentDescription = "Remove",
+                                tint = Color.LightGray
+                            )
+                        }
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                Button(onClick = {
-                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                    navController.popBackStack()
-                    // TODO: Send parsedMeds.value to API or next screen
-                }) {
-                    Text("Done")
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+
+                    Button(onClick = {
+                        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                        navController.popBackStack()
+                        // TODO: Send parsedMeds.value to API or next screen
+                    }) {
+                        Text("Cancel")
+                    }
+
+                    if (parsedMeds.value.isNotEmpty()) {
+                        Button(onClick = {
+                            activity?.requestedOrientation =
+                                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                            navController.popBackStack()
+                            // TODO: Send parsedMeds.value to API or next screen
+                        }) {
+                            Text("Add to medication list")
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-fun parseMedicationsFromOcr(text: String): List<m_medication> {
-    val lines = text.lines()
+fun parseMedicationsFromOcr(
+    text: String,
+    knownMeds: List<m_med_indiv>
+): List<m_med_indiv> {
+    val words = text.split(Regex("""\W+"""))
+        .map { it.lowercase() }
+        .toSet()
 
-    val startIndex = lines.indexOfFirst { it.contains("Active Medications", ignoreCase = true) }
-    val endIndex = lines.indexOfFirst { it.contains("People Completing Record", ignoreCase = true) }
-
-    if (startIndex == -1 || endIndex == -1 || startIndex >= endIndex) return emptyList()
-
-    val medsSection = lines.subList(startIndex + 1, endIndex)
-        .filter { it.isNotBlank() }
-
-    val medications = mutableListOf<m_medication>()
-    var current: MutableList<String> = mutableListOf()
-
-    fun flush() {
-        if (current.isEmpty()) return
-
-        val combined = current.joinToString(" ")
-        val dateRegex = Regex("""\d{2}-[A-Za-z]{3}-\d{4}""")
-        val date = dateRegex.find(combined)?.value ?: ""
-        val name = Regex("""(?<=\d{4}\s)(.+?)(?=Route:)""").find(combined)?.value?.trim() ?: ""
-        val route = Regex("""Route:\s*(\w+(?: \w+)?)""").find(combined)?.groupValues?.get(1) ?: ""
-        val dosage = Regex("""Give\s+([\w\d\s.,%/]+)""").find(combined)?.groupValues?.get(1)
-            ?: Regex("""Use\s+([\w\d\s.,%/]+)""").find(combined)?.groupValues?.get(1) ?: ""
-        val frequency = Regex("""Frequency:\s*(.+?)($|Stop|Use)""").find(combined)?.groupValues?.get(1)?.trim() ?: ""
-        val stopAfter = Regex("""Stop after\s+([\w\s]+)""").find(combined)?.groupValues?.get(1)?.trim()
-
-        medications.add(
-            m_medication(
-                med_name = name,
-                med_route = route,
-                med_dosage = dosage,
-                med_frequency = frequency,
-                med_startDate = date,
-                med_stopAfter = stopAfter
-            )
-        )
-        current.clear()
+    return knownMeds.filter { med ->
+        med.med_name.lowercase() in words
     }
-
-    for (line in medsSection) {
-        if (line.matches(Regex("""\d{2}-[A-Za-z]{3}-\d{4}.*"""))) {
-            flush()
-        }
-        current.add(line)
-    }
-
-    flush() // capture last block
-
-    return medications
 }
+
+
 
 @Composable
 fun LockOrientation(orientation: Int) {

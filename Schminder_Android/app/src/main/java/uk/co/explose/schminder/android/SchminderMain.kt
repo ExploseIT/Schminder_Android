@@ -3,7 +3,6 @@ package uk.co.explose.schminder.android
 
 import android.app.Activity
 import android.content.pm.ActivityInfo
-import android.content.res.Configuration
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,7 +50,7 @@ import com.google.firebase.Firebase
 
 
 import kotlinx.coroutines.delay
-import uk.co.explose.schminder.android.core.GlobalAnalytics
+import uk.co.explose.schminder.android.core.AppGlobal
 import uk.co.explose.schminder.android.ui.components.AppBottomBar
 import uk.co.explose.schminder.android.ui.components.AppTopBar
 import uk.co.explose.schminder.android.ui.screens.AddMedScreen
@@ -65,73 +64,19 @@ import uk.co.explose.schminder.android.ui.screens.PrescriptionScanScreen
 fun SchminderMain() {
     val navController = rememberNavController()
     var error by remember { mutableStateOf<String?>(null) }
-    var fabExpanded by remember { mutableStateOf(false) }
+
     val configuration = LocalConfiguration.current
-    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     val activity = LocalContext.current as? Activity
 
     LaunchedEffect(Unit) {
         //activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        GlobalAnalytics.logEvent("test_event", mapOf("origin" to "SchminderMain"))
+        AppGlobal.logEvent("test_event", mapOf("origin" to "SchminderMain"))
     }
 
     Scaffold(
         topBar = { AppTopBar(currentRoute = "mockup", navController) },
         bottomBar = { AppBottomBar(currentRoute = "mockup", navController) },
-        floatingActionButton = {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
-                if (fabExpanded) {
-                    if (isLandscape) {
-                        Row(
-                            modifier = Modifier
-                                .padding(bottom = 100.dp, end = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            FabItem(icon = Icons.Default.CameraAlt, label = "Scan") {
-                                fabExpanded = false
-                                navController.navigate("prescription_scan")
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            FabItem(icon = Icons.Default.Add, label = "Add Medication") {
-                                fabExpanded = false
-                                navController.navigate("add_med")
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            FabItem(icon = Icons.Default.Edit, label = "TBC") {
-                                fabExpanded = false
-                            }
-                        }
-                    } else {
-                        Column(
-                            modifier = Modifier
-                                .padding(bottom = 100.dp, end = 16.dp),
-                            horizontalAlignment = Alignment.End
-                        ) {
-                            FabItem(icon = Icons.Default.CameraAlt, label = "Scan") {
-                                fabExpanded = false
-                                navController.navigate("prescription_scan")
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            FabItem(icon = Icons.Default.Add, label = "Add Medication") {
-                                fabExpanded = false
-                                navController.navigate("add_med")
-                            }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            FabItem(icon = Icons.Default.Edit, label = "TBC") {
-                                fabExpanded = false
-                            }
-                        }
-                    }
-                }
-
-                FloatingActionButton(onClick = {
-                    fabExpanded = !fabExpanded
-                }) {
-                    Text(if (fabExpanded) "×" else "+")
-                }
-            }
-        }
 
     ) { innerPadding ->
         NavHost(

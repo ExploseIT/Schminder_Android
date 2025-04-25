@@ -1,6 +1,6 @@
 [versions]
 activityCompose = "1.10.1"
-agp = "8.9.1"
+agp = "8.9.2"
 converterMoshi = "2.9.0"
 desugar_jdk_libs = "2.1.5"
 firebaseAnalytics = "22.4.0"

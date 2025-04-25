@@ -26,7 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import uk.co.explose.schminder.android.core.GlobalAnalytics
+import uk.co.explose.schminder.android.core.AppGlobal
 
 @Composable
 fun RefillCard(
@@ -37,7 +37,7 @@ fun RefillCard(
     onManageAllClick: () -> Unit,
     onReviewMedsClick: () -> Unit
 ) {
-    GlobalAnalytics.logEvent("test_event", mapOf("origin" to "Schminder - RefillCard"))
+    AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - RefillCard"))
     Column(
         modifier = Modifier
             .fillMaxWidth()

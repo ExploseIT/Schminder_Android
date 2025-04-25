@@ -12,7 +12,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
-import uk.co.explose.schminder.android.core.GlobalAnalytics
+import uk.co.explose.schminder.android.core.AppGlobal
 import uk.co.explose.schminder.android.ui.components.ManageItem
 import uk.co.explose.schminder.android.ui.components.AppBottomBar
 import uk.co.explose.schminder.android.ui.components.SectionHeader
@@ -20,7 +20,7 @@ import uk.co.explose.schminder.android.ui.components.SectionHeader
 
 @Composable
 fun ManageScreen(navController: NavHostController) {
-    GlobalAnalytics.logEvent("test_event", mapOf("origin" to "Schminder - Manage"))
+    AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - Manage"))
     Scaffold(
         //bottomBar = { AppBottomBar(currentRoute = "mockup", navController) }
     ) { innerPadding ->

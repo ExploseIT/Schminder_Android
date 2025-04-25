@@ -7,12 +7,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
-import uk.co.explose.schminder.android.core.GlobalAnalytics
+import uk.co.explose.schminder.android.core.AppGlobal
 
 
 @Composable
 fun AddMedScreen(navController: NavHostController) {
-    GlobalAnalytics.logEvent("test_event", mapOf("origin" to "Schminder - AddMed"))
+    AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - AddMed"))
     Scaffold(
         //bottomBar = { AppBottomBar(currentRoute = "mockup", navController) }
     ) { innerPadding ->
