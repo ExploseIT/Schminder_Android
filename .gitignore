@@ -1,24 +1,25 @@
 # macOS system files
-.DS_Store
+Schminder_Android/.idea/
+Schminder_Android/app/.DS_Store
 
 # Jetpack Compose build folders
-/build
-/.gradle
+Schminder_Android/app/build
+Schminder_Android/app/.gradle
 
 # IntelliJ/Android Studio
-.idea/
-*.iml
+Schminder_Android/app/.idea/
+Schminder_Android/app/*.iml
 
 # NodeJS
-node_modules/
+Schminder_Android/app/node_modules/
 
 # Python
-__pycache__/
-*.pyc
+Schminder_Android/app/__pycache__/
+Schminder_Android/app/*.pyc
 
 # Build results
-release/
-debug/
+Schminder_Android/app/release/
+Schminder_Android/app/debug/
 
 
 
