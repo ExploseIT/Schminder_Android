@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.compose.compiler)
     // Add the Google services Gradle plugin
     id("com.google.gms.google-services")
-    kotlin("kapt")
+    id("kotlin-kapt")
 }
 
 android {
@@ -16,8 +16,8 @@ android {
         applicationId = "uk.co.explose.schminder.android"
         minSdk = 27
         targetSdk = 36
-        versionCode = 7
-        versionName = "1.0.1.7"
+        versionCode = 8
+        versionName = "1.0.1.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -26,7 +26,7 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
-            buildConfigField( "String", "BASE_URL", "\"https://explose.ngrok.app/schminder_net/\"")
+            buildConfigField( "String", "BASE_URL",  "\"https://explose.ngrok.app/schminder_net/\"")
         }
         release {
             isMinifyEnabled = false
@@ -74,8 +74,8 @@ dependencies {
 // Import the Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:33.12.0"))
 
-    implementation("androidx.room:room-runtime:2.6.1")
-    kapt("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-runtime:2.7.1")
+    kapt("androidx.room:room-compiler:2.7.1")
 
     // TODO: Add the dependencies for Firebase products you want to use
     // When using the BoM, don't specify versions in Firebase dependencies

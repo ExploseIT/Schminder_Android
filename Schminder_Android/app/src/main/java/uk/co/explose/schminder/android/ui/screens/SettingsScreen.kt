@@ -14,78 +14,85 @@ import androidx.navigation.NavHostController
 import uk.co.explose.schminder.android.model.server_version.c_ServerVersion
 import uk.co.explose.schminder.android.network.RetrofitClient
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import uk.co.explose.schminder.android.core.AppGlobal
+import uk.co.explose.schminder.android.core.m_apg_data
 
 @Composable
 fun SettingsScreen(navController: NavHostController) {
     val context = LocalContext.current
-    val versionName = context.packageManager
-        .getPackageInfo(context.packageName, 0).versionName
-    var serverVersion by remember { mutableStateOf<c_ServerVersion?>(null) }
+    val coroutineScope = rememberCoroutineScope()
 
+    var apg_data by remember { mutableStateOf<m_apg_data?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
 
     AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - Settings"))
 
-    val medCount  = AppGlobal.medsGetCount()
-
+    // ✅ Load data once when screen opens
     LaunchedEffect(Unit) {
         try {
-            val result = fetchServerVersion()
-            serverVersion = result
+            isLoading = true
+            apg_data = AppGlobal.doAPGDataRead()
         } catch (e: Exception) {
-            error = "Failed to fetch server version"
+            error = e.localizedMessage
         } finally {
             isLoading = false
         }
     }
-    /*
-    when {
-        isLoading -> Text("Server Version: Loading...")
-        error != null -> Text("Server Version: ${error}")
-        serverVersion != null -> Text("Server Version: ${serverVersion!!.sv_version}")
-    }
-*/
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
         Text("Settings")
         Spacer(modifier = Modifier.height(16.dp))
-        Text("App Version: $versionName", style = MaterialTheme.typography.bodyLarge)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Meds Loaded: $medCount",
-            style = MaterialTheme.typography.bodyLarge
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Server Version: ${serverVersion?.sv_version ?: "Loading..."}",
-            style = MaterialTheme.typography.bodyLarge
-        )
+
+        if (isLoading) {
+            Text("Loading...", style = MaterialTheme.typography.bodyLarge)
+        } else if (error != null) {
+            Text("Error loading data: $error", style = MaterialTheme.typography.bodyLarge)
+        } else if (apg_data != null) {
+            Text("App Version: ${apg_data!!.m_versionName}", style = MaterialTheme.typography.bodyLarge)
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Meds Loaded: ${apg_data!!.m_med_indiv_info!!.med_indiv_list.count()}",
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Server Version: ${apg_data!!.m_server_version?.sv_version ?: "Loading..."}",
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
-        Button(onClick = { AppGlobal.doFirebaseInit(context) }) {
+
+        Button(onClick = {
+            coroutineScope.launch {
+                try {
+                    isLoading = true
+                    AppGlobal.doFirebaseInit(context)
+                    apg_data = AppGlobal.doAPGDataRead()
+                } catch (e: Exception) {
+                    error = e.localizedMessage
+                } finally {
+                    isLoading = false
+                }
+            }
+        }) {
             Text("Reload data")
         }
+
         Spacer(modifier = Modifier.height(24.dp))
+
         Button(onClick = { navController.navigateUp() }) {
             Text("Back")
         }
     }
 }
 
-suspend fun fetchServerVersion(): c_ServerVersion? {
-    return try {
-        val response = RetrofitClient.instance.getServerVersion()
-        if (response.isSuccessful) {
-            response.body()
-        } else {
-            null // handle error (optional: log or throw)
-        }
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
-}
+

@@ -2,7 +2,9 @@ package uk.co.explose.schminder.android.ui.screens
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.pm.ActivityInfo
+import android.util.Log
 
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
@@ -42,6 +44,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -54,10 +57,17 @@ import androidx.navigation.NavController
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import uk.co.explose.schminder.android.FabItem
 import uk.co.explose.schminder.android.core.AppGlobal
-import uk.co.explose.schminder.android.model.mpp.m_med_indiv
+import uk.co.explose.schminder.android.model.mpp.c_med
+import uk.co.explose.schminder.android.model.mpp.e_meds
+import uk.co.explose.schminder.android.model.mpp.c_med_indiv
 import uk.co.explose.schminder.android.model.mpp.m_medication
+import uk.co.explose.schminder.android.model.mpp.med_search_tx
 
 @ExperimentalGetImage
 @SuppressLint("ContextCastToActivity")
@@ -65,6 +75,8 @@ import uk.co.explose.schminder.android.model.mpp.m_medication
 @Composable
 fun PrescriptionScanScreen(navController: NavController) {
     val context = LocalContext.current
+    val _e_meds = e_meds(context)
+
     val lifecycleOwner = LocalLifecycleOwner.current
     val activity = LocalContext.current as? Activity
 
@@ -73,16 +85,20 @@ fun PrescriptionScanScreen(navController: NavController) {
     activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED //ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
     val outputText = remember { mutableStateOf("Scan a prescription...") }
-    val parsedMeds = remember { mutableStateOf<List<m_med_indiv>>(emptyList()) }
+    val parsedMeds = remember { mutableStateOf<List<c_med_indiv>>(emptyList()) }
     val scanComplete = remember { mutableStateOf(false) }
 
     val cameraPermission = android.Manifest.permission.CAMERA
     val permissionState = rememberPermissionState(permission = cameraPermission)
 
     val previewView = remember { PreviewView(context) }
-    val knownMeds = AppGlobal.doMedsIndivInfoRead()
+    val knownMeds = AppGlobal.doAPGDataRead().m_med_indiv_info
+
+    val coroutineScope = rememberCoroutineScope()
+
     LaunchedEffect(Unit) {
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        parsedMeds.value = _e_meds.getAllMedsIndiv()
     }
 
     DisposableEffect(Unit) {
@@ -127,15 +143,20 @@ fun PrescriptionScanScreen(navController: NavController) {
                                             knownMeds.med_indiv_list
                                         )
                                         val existingMeds = parsedMeds.value
-
+                                        val novo = knownMeds.med_indiv_list.filter { it.med_name.equals("NovoRapid", ignoreCase = true) }
                                         val uniqueMeds = newMeds.filter { newMed ->
-                                            existingMeds.none { it.med_id == newMed.med_id }
+                                            existingMeds.none { it.med_name == newMed.med_name }
                                         }
 
                                         if (uniqueMeds.isNotEmpty()) {
                                             outputText.value = rawText
                                             parsedMeds.value = existingMeds + uniqueMeds
-                                            // scanComplete.value = true
+
+                                            // ✅ Insert into Room
+                                            coroutineScope.launch {
+                                                val i_count = _e_meds.insertMedsIndiv(uniqueMeds)
+                                                Log.e("Medication insert", "Insert count ${i_count.count()}")
+                                            }
                                         }
                                     }
                                 }
@@ -203,18 +224,35 @@ fun PrescriptionScanScreen(navController: NavController) {
                             color = Color.White,
                             modifier = Modifier.weight(1f)
                         )
-/*
+
                         IconButton(onClick = {
-                            navController.navigate("add_med")
+                            coroutineScope.launch {
+                                val _med_search_info = med_search_tx(med.med_name, outputText.value)
+                                try {
+                                    val medicationDetail = _e_meds.doMedSearch(_med_search_info)
+
+                                    if (medicationDetail != null) {
+                                        // Save to Room
+                                        //medsDao.insertAll(listOf(medicationDetail))
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("MedicationFetch", "Error fetching medication: ${e.message}")
+                                }
+                            }
                         }) {
                             Icon(Icons.Default.Add,
                                 contentDescription = "Add",
                                 tint = Color.White)
                         }
-*/
+
                         IconButton(onClick = {
                             // Remove this item from the list
-                            parsedMeds.value = parsedMeds.value.filterNot { it.med_id == med.med_id }
+                            parsedMeds.value = parsedMeds.value.filterNot { it.med_name == med.med_name }
+
+                            // Delete from Room
+                            coroutineScope.launch {
+                                _e_meds.deleteMedByName(med.med_name)
+                            }
                         }) {
                             Icon(
                                 imageVector = Icons.Default.Remove,
@@ -259,10 +297,11 @@ fun PrescriptionScanScreen(navController: NavController) {
 
 fun parseMedicationsFromOcr(
     text: String,
-    knownMeds: List<m_med_indiv>
-): List<m_med_indiv> {
+    knownMeds: List<c_med_indiv>
+): List<c_med_indiv> {
     val words = text.split(Regex("""\W+"""))
         .map { it.lowercase() }
+        .filter { it.isNotBlank() }
         .toSet()
 
     return knownMeds.filter { med ->

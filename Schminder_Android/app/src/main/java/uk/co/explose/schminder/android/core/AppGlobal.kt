@@ -8,20 +8,22 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import uk.co.explose.schminder.android.core.AppGlobal.m_apg
 import uk.co.explose.schminder.android.model.firebase.e_Firebase
 import uk.co.explose.schminder.android.model.firebase.r_FirebaseToken
 import uk.co.explose.schminder.android.model.firebase.s_FirebaseToken
 import uk.co.explose.schminder.android.model.mpp.e_meds
 import uk.co.explose.schminder.android.model.mpp.m_med_indiv_info
-
+import uk.co.explose.schminder.android.model.server_version.c_ServerVersion
+import uk.co.explose.schminder.android.network.RetrofitClient
 
 
 object AppGlobal {
 
     private lateinit var firebaseAnalytics: FirebaseAnalytics
     private lateinit var mFirebaseAuth: FirebaseAuth
-    private var mFirebaseTokenInfo: r_FirebaseToken? = null
-    private var _m_med_indiv_info: m_med_indiv_info? = null
+    private lateinit var m_apg: m_apg_data
+
 
     fun init(context: Context, onError: (Exception) -> Unit = {}) {
 
@@ -38,10 +40,15 @@ object AppGlobal {
                     firebaseUser?.getIdToken(true)?.addOnSuccessListener { result ->
                         val idToken = result.token
                         val _s_fbtoken = s_FirebaseToken(s_fbtoken = idToken.toString())
+                        m_apg = m_apg_data()
+                        m_apg.mFirebaseTokenInfo = r_FirebaseToken.from(_s_fbtoken.s_fbtoken, firebaseUser)
                         CoroutineScope(Dispatchers.IO).launch {
                             try {
-                                mFirebaseTokenInfo  = e_Firebase().pFirebaseToken(_s_fbtoken)
-                                _m_med_indiv_info =  e_meds().doMedIndivLoad()
+                                m_apg.mFirebaseTokenInfo  = e_Firebase().pFirebaseToken(_s_fbtoken)
+                                m_apg.m_versionName = context.packageManager
+                                    .getPackageInfo(context.packageName, 0).versionName
+                                m_apg.m_med_indiv_info =  e_meds(context).doMedIndivLoad()
+                                m_apg.m_server_version = fetchServerVersion()
                             } catch (ex: Exception) {
                                 onError(ex)
                             }
@@ -50,6 +57,21 @@ object AppGlobal {
                 }
             }
     }
+
+    suspend fun fetchServerVersion(): c_ServerVersion? {
+        return try {
+            val response = RetrofitClient.instance.getServerVersion()
+            if (response.isSuccessful) {
+                response.body()
+            } else {
+                null // handle error (optional: log or throw)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
 
     fun logEvent(name: String, params: Map<String, String>? = null) {
         val bundle = android.os.Bundle().apply {
@@ -63,16 +85,18 @@ object AppGlobal {
     fun medsGetCount() : Int {
         var ret: Int = 0
 
-        if (_m_med_indiv_info != null && _m_med_indiv_info?.med_indiv_list != null) {
-            ret = _m_med_indiv_info?.med_indiv_list?.count()!!
+        if (m_apg.m_med_indiv_info != null && m_apg.m_med_indiv_info?.med_indiv_list != null) {
+            ret = m_apg.m_med_indiv_info?.med_indiv_list?.count()!!
         }
         return ret
     }
 
-    fun doMedsIndivInfoRead() : m_med_indiv_info? {
-        return _m_med_indiv_info;
+    fun doAPGDataRead() : m_apg_data {
+        return m_apg
     }
+
 
     fun getInstance(): FirebaseAnalytics = firebaseAnalytics
 }
+
 
