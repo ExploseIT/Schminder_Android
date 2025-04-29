@@ -205,7 +205,13 @@ fun HomeScreen(navController: NavHostController) {
 
             // Now show list of scanned medications from parsedMeds : <List<m_med_indiv>>
 
-
+            /*
+            Test code for Crashlytics
+            Button (onClick = { throw RuntimeException("Test crash")}
+            ) {
+                Text("Test crash")
+            }
+            */
         }
     }
 }

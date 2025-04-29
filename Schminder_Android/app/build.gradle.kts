@@ -3,8 +3,13 @@ plugins {
     alias(libs.plugins.kotlin.android)
     // Existing plugins
     alias(libs.plugins.compose.compiler)
-    // Add the Google services Gradle plugin
+
+    // Make sure that you have the Google services Gradle plugin
     id("com.google.gms.google-services")
+
+    // Add the Crashlytics Gradle plugin
+    id("com.google.firebase.crashlytics")
+
     id("kotlin-kapt")
 }
 
@@ -16,8 +21,8 @@ android {
         applicationId = "uk.co.explose.schminder.android"
         minSdk = 27
         targetSdk = 36
-        versionCode = 8
-        versionName = "1.0.1.8"
+        versionCode = 9
+        versionName = "1.0.1.9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -74,15 +79,16 @@ dependencies {
 // Import the Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:33.12.0"))
 
+    // Add the dependencies for the Crashlytics and Analytics libraries
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-crashlytics")
+    implementation("com.google.firebase:firebase-analytics")
+    // Firebase Authentication
+    implementation("com.google.firebase:firebase-auth")
+
     implementation("androidx.room:room-runtime:2.7.1")
     kapt("androidx.room:room-compiler:2.7.1")
 
-    // TODO: Add the dependencies for Firebase products you want to use
-    // When using the BoM, don't specify versions in Firebase dependencies
-    implementation("com.google.firebase:firebase-analytics")
-
-    // Firebase Authentication
-    implementation("com.google.firebase:firebase-auth")
 
     // 🧱 Jetpack Compose core libraries
     implementation(libs.androidx.activity.compose)
