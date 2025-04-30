@@ -63,9 +63,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import uk.co.explose.schminder.android.FabItem
 import uk.co.explose.schminder.android.core.AppGlobal
-import uk.co.explose.schminder.android.model.mpp.c_med
-import uk.co.explose.schminder.android.model.mpp.e_meds
-import uk.co.explose.schminder.android.model.mpp.c_med_indiv
+import uk.co.explose.schminder.android.model.mpp.C_med
+import uk.co.explose.schminder.android.model.mpp.E_meds
+import uk.co.explose.schminder.android.model.mpp.C_med_indiv
 import uk.co.explose.schminder.android.model.mpp.m_medication
 import uk.co.explose.schminder.android.model.mpp.med_search_tx
 
@@ -75,7 +75,7 @@ import uk.co.explose.schminder.android.model.mpp.med_search_tx
 @Composable
 fun PrescriptionScanScreen(navController: NavController) {
     val context = LocalContext.current
-    val _e_meds = e_meds(context)
+    val _E_meds = E_meds(context)
 
     val lifecycleOwner = LocalLifecycleOwner.current
     val activity = LocalContext.current as? Activity
@@ -85,20 +85,20 @@ fun PrescriptionScanScreen(navController: NavController) {
     activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED //ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
     val outputText = remember { mutableStateOf("Scan a prescription...") }
-    val parsedMeds = remember { mutableStateOf<List<c_med_indiv>>(emptyList()) }
+    val parsedMeds = remember { mutableStateOf<List<C_med_indiv>>(emptyList()) }
     val scanComplete = remember { mutableStateOf(false) }
 
     val cameraPermission = android.Manifest.permission.CAMERA
     val permissionState = rememberPermissionState(permission = cameraPermission)
 
     val previewView = remember { PreviewView(context) }
-    val knownMeds = AppGlobal.doAPGDataRead().m_med_indiv_info
+    val knownMeds = AppGlobal.doAPGDataRead().m_medIndivInfo
 
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        parsedMeds.value = _e_meds.getAllMedsIndiv()
+        parsedMeds.value = _E_meds.getAllMedsIndiv()
     }
 
     DisposableEffect(Unit) {
@@ -140,12 +140,12 @@ fun PrescriptionScanScreen(navController: NavController) {
                                     if (knownMeds != null) {
                                         val newMeds = parseMedicationsFromOcr(
                                             rawText,
-                                            knownMeds.med_indiv_list
+                                            knownMeds.medIndivList
                                         )
                                         val existingMeds = parsedMeds.value
-                                        val novo = knownMeds.med_indiv_list.filter { it.med_name.equals("NovoRapid", ignoreCase = true) }
+                                        val novo = knownMeds.medIndivList.filter { it.medName.equals("NovoRapid", ignoreCase = true) }
                                         val uniqueMeds = newMeds.filter { newMed ->
-                                            existingMeds.none { it.med_name == newMed.med_name }
+                                            existingMeds.none { it.medName == newMed.medName }
                                         }
 
                                         if (uniqueMeds.isNotEmpty()) {
@@ -154,7 +154,7 @@ fun PrescriptionScanScreen(navController: NavController) {
 
                                             // ✅ Insert into Room
                                             coroutineScope.launch {
-                                                val i_count = _e_meds.insertMedsIndiv(uniqueMeds)
+                                                val i_count = _E_meds.insertMedsIndiv(uniqueMeds)
                                                 Log.e("Medication insert", "Insert count ${i_count.count()}")
                                             }
                                         }
@@ -220,16 +220,16 @@ fun PrescriptionScanScreen(navController: NavController) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "• ${med.med_name}",
+                            text = "• ${med.medName}",
                             color = Color.White,
                             modifier = Modifier.weight(1f)
                         )
 
                         IconButton(onClick = {
                             coroutineScope.launch {
-                                val _med_search_info = med_search_tx(med.med_name, outputText.value)
+                                val _med_search_info = med_search_tx(med.medName, outputText.value)
                                 try {
-                                    val medicationDetail = _e_meds.doMedSearch(_med_search_info)
+                                    val medicationDetail = _E_meds.doMedSearch(_med_search_info)
 
                                     if (medicationDetail != null) {
                                         // Save to Room
@@ -247,11 +247,11 @@ fun PrescriptionScanScreen(navController: NavController) {
 
                         IconButton(onClick = {
                             // Remove this item from the list
-                            parsedMeds.value = parsedMeds.value.filterNot { it.med_name == med.med_name }
+                            parsedMeds.value = parsedMeds.value.filterNot { it.medName == med.medName }
 
                             // Delete from Room
                             coroutineScope.launch {
-                                _e_meds.deleteMedByName(med.med_name)
+                                _E_meds.deleteMedByName(med.medName)
                             }
                         }) {
                             Icon(
@@ -297,15 +297,15 @@ fun PrescriptionScanScreen(navController: NavController) {
 
 fun parseMedicationsFromOcr(
     text: String,
-    knownMeds: List<c_med_indiv>
-): List<c_med_indiv> {
+    knownMeds: List<C_med_indiv>
+): List<C_med_indiv> {
     val words = text.split(Regex("""\W+"""))
         .map { it.lowercase() }
         .filter { it.isNotBlank() }
         .toSet()
 
     return knownMeds.filter { med ->
-        med.med_name.lowercase() in words
+        med.medName.lowercase() in words
     }
 }
 

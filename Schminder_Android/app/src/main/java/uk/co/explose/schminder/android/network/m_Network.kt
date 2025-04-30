@@ -17,8 +17,8 @@ import uk.co.explose.schminder.android.model.firebase.r_FirebaseToken
 import uk.co.explose.schminder.android.model.firebase.s_FirebaseToken
 import uk.co.explose.schminder.android.model.login.LoginRequest
 import uk.co.explose.schminder.android.model.login.LoginResponse
-import uk.co.explose.schminder.android.model.mpp.m_med_indiv_info
-import uk.co.explose.schminder.android.model.mpp.med_info
+import uk.co.explose.schminder.android.model.mpp.m_medIndivInfo
+import uk.co.explose.schminder.android.model.mpp.medInfo
 import uk.co.explose.schminder.android.model.mpp.med_search_tx
 import uk.co.explose.schminder.android.model.server_version.c_ServerVersion
 import uk.co.explose.schminder.android.model.user.UserProfile
@@ -33,17 +33,17 @@ interface ApiService {
     @POST("api/auth/login")
     suspend fun login(@Body loginRequest: LoginRequest): Response<LoginResponse>
 
-    @GET("api/api_ServerVersion")
+    @GET("api/api_ServerVersion2_0")
     suspend fun getServerVersion(): Response<c_ServerVersion>
 
     @POST("api/api_FirebaseToken")
     suspend fun postFirebaseToken(@Body token: s_FirebaseToken): Response<r_FirebaseToken>
 
-    @GET("api/api_medindivlistall")
-    suspend fun getMedsIndivList(): Response<m_med_indiv_info>
+    @GET("api/api_medindivlistall2_0")
+    suspend fun getMedsIndivList(): Response<m_medIndivInfo>
 
     @GET("api/api_medfinddetail")
-    suspend fun doMedsSearch(@Body med_search: med_search_tx ): Response<med_info>
+    suspend fun doMedsSearch(@Body med_search: med_search_tx ): Response<medInfo>
 }
 
 object RetrofitClient {

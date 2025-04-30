@@ -59,12 +59,12 @@ fun SettingsScreen(navController: NavHostController) {
             Text("App Version: ${apg_data!!.m_versionName}", style = MaterialTheme.typography.bodyLarge)
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Meds Loaded: ${apg_data!!.m_med_indiv_info!!.med_indiv_list.count()}",
+                text = "Meds Loaded: ${apg_data!!.m_medIndivInfo!!.medIndivList.count()}",
                 style = MaterialTheme.typography.bodyLarge
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Server Version: ${apg_data!!.m_server_version?.sv_version ?: "Loading..."}",
+                text = "Server Version: ${apg_data!!.m_serverVersion?.svVersion ?: "Loading..."}",
                 style = MaterialTheme.typography.bodyLarge
             )
         }

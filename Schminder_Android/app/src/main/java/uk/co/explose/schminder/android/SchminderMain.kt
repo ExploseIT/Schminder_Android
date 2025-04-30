@@ -4,6 +4,9 @@ package uk.co.explose.schminder.android
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.util.Log
+import androidx.camera.core.ExperimentalGetImage
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,11 +57,13 @@ import uk.co.explose.schminder.android.core.AppGlobal
 import uk.co.explose.schminder.android.ui.components.AppBottomBar
 import uk.co.explose.schminder.android.ui.components.AppTopBar
 import uk.co.explose.schminder.android.ui.screens.AddMedScreen
+import uk.co.explose.schminder.android.ui.screens.AddMedicationScheduleScreen
 import uk.co.explose.schminder.android.ui.screens.ManageScreen
 import uk.co.explose.schminder.android.ui.screens.MedicationsScreen
 import uk.co.explose.schminder.android.ui.screens.PlanScreen
 import uk.co.explose.schminder.android.ui.screens.PrescriptionScanScreen
 
+@androidx.annotation.OptIn(ExperimentalGetImage::class)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SchminderMain() {
@@ -92,6 +97,26 @@ fun SchminderMain() {
             composable("mockup") { ManageScreen(navController) }
             // Add this screen in the future for scan
             composable("prescription_scan") { PrescriptionScanScreen(navController)  }
+            composable(
+                "addMedSchedule",
+                enterTransition = { slideInHorizontally { it } },
+                exitTransition = { slideOutHorizontally { -it } }
+            ) {
+                AddMedicationScheduleScreen(navController = navController) { name, time, freq, count, unit ->
+                    // Handle add/save logic here (save to DB, etc.)
+                }
+            }
+            composable("medDetail/{medName}") { backStackEntry ->
+                val medName = backStackEntry.arguments?.getString("medName")
+                AddMedicationScheduleScreen(
+                    navController = navController,
+                    medName = medName ?: "Unknown",
+                    onAdd = { name, time, frequency, count, unit ->
+                        println("Add clicked for $name at $time - $frequency for $count $unit") }
+                )
+            }
+
+
         }
     }
 }

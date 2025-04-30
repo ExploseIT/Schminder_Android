@@ -21,8 +21,8 @@ android {
         applicationId = "uk.co.explose.schminder.android"
         minSdk = 27
         targetSdk = 36
-        versionCode = 9
-        versionName = "1.0.1.9"
+        versionCode = 10
+        versionName = "1.0.1.10"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -96,6 +96,12 @@ dependencies {
     implementation(libs.androidx.material3) // Optional: material2 is also okay
     implementation(libs.androidx.ui.tooling.preview)
     debugImplementation(libs.androidx.ui.tooling)
+
+    implementation(libs.androidx.material3.window.size.class1)
+    implementation(libs.androidx.material3.v132)
+    implementation(libs.androidx.material3.window.size.class1)
+    implementation(libs.androidx.material3.adaptive.navigation.suite)
+    // implementation(libs.androidx.material3.adaptive.navigation)
 
     // 🔁 Navigation for Compose
     implementation(libs.androidx.navigation.compose)

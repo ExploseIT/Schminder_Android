@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,8 +39,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
 import uk.co.explose.schminder.android.core.AppGlobal
-import uk.co.explose.schminder.android.model.mpp.c_med
-import uk.co.explose.schminder.android.model.mpp.e_meds
+import uk.co.explose.schminder.android.model.mpp.C_med
+import uk.co.explose.schminder.android.model.mpp.E_meds
+import uk.co.explose.schminder.android.ui.components.ManageItem
+import uk.co.explose.schminder.android.ui.components.MedItem
 
 @SuppressLint("ContextCastToActivity")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,15 +50,15 @@ import uk.co.explose.schminder.android.model.mpp.e_meds
 fun MedicationsScreen(navController: NavHostController) {
     val context = LocalContext.current
     val activity = LocalContext.current as? Activity
-    val _e_meds = e_meds(context)
+    val _E_meds = E_meds(context)
     val coroutineScope = rememberCoroutineScope()
 
-    var meds by remember { mutableStateOf<List<c_med>>(emptyList()) }
+    var meds by remember { mutableStateOf<List<C_med>>(emptyList()) }
 
     AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - Medication"))
 
     LaunchedEffect(Unit) {
-        meds = _e_meds.getAllMeds()
+        meds = _E_meds.getAllMeds()
     }
 
     Scaffold(
@@ -63,7 +66,9 @@ fun MedicationsScreen(navController: NavHostController) {
             TopAppBar(
                 title = { Text("Medications") },
                 actions = {
-                    IconButton(onClick = { _e_meds.addMedsNew() }) {
+                    IconButton(onClick = {
+                        navController.navigate("addMedSchedule")
+                    }) {
                         Icon(Icons.Default.Add, contentDescription = "Add Medication")
                     }
                 }
@@ -88,19 +93,14 @@ fun MedicationsScreen(navController: NavHostController) {
                     contentPadding = paddingValues
                 ) {
                     items(items = meds) { med ->
-                        MedicationItem(
-                            med = med,
-                            onEdit = {
-                                coroutineScope.launch {
-                                    _e_meds.editMedByName(med.med_name, "")
-                                }
-                            },
-                            onDelete = {
-                                coroutineScope.launch {
-                                    _e_meds.deleteMedByName(med.med_name)
-                                }
+                        MedItem(
+                            icon = Icons.Filled.Person,
+                            label = med.medName,
+                            onClick = {
+                                navController.navigate("medDetail/${med.medName}")
                             }
                         )
+
                     }
                 }
             }
@@ -108,34 +108,5 @@ fun MedicationsScreen(navController: NavHostController) {
     )
 }
 
-@Composable
-fun MedicationItem(
-    med: c_med,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .padding(8.dp)
-            .fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "Name: ${med.med_name}")
-            Text(text = "Info: ${med.med_info}")
-            Text(text = "Scheduled: ${if (med.med_scheduled) "Yes" else "No"}")
 
-            Row(
-                modifier = Modifier.padding(top = 8.dp)
-            ) {
-                Button(onClick = onEdit) {
-                    Text("Edit")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = onDelete) {
-                    Text("Delete")
-                }
-            }
-        }
-    }
-}
 
