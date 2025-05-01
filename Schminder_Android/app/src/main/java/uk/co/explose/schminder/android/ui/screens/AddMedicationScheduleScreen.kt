@@ -27,7 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import java.time.LocalTime
@@ -35,7 +35,7 @@ import java.time.LocalTime
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.*
-
+import uk.co.explose.schminder.android.model.mpp.Med
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,7 +43,7 @@ import androidx.compose.material3.*
 fun AddMedicationScheduleScreen(
     navController: NavHostController,
     medName: String = "Metformin",
-    onAdd: (String, LocalTime, String, Int, String) -> Unit
+    onAdd: (Med) -> Unit
 ) {
     val timePickerState = rememberTimePickerState(initialHour = 12, initialMinute = 0, is24Hour = true)
     var showTimePicker by remember { mutableStateOf(false) }
@@ -131,7 +131,7 @@ fun AddMedicationScheduleScreen(
             Button(
                 onClick = {
                     val time = LocalTime.of(timePickerState.hour, timePickerState.minute)
-                    onAdd(medName, time, frequency, durationCount.toIntOrNull() ?: 1, durationUnit)
+                    onAdd(Med.createScheduledMed(medName, time, frequency, durationCount.toIntOrNull() ?: 1, durationUnit))
                     navController.popBackStack()
                 }
             ) {

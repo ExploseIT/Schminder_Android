@@ -1,3 +1,5 @@
+
+
 package uk.co.explose.schminder.android.ui.screens
 
 import android.annotation.SuppressLint
@@ -63,9 +65,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import uk.co.explose.schminder.android.FabItem
 import uk.co.explose.schminder.android.core.AppGlobal
-import uk.co.explose.schminder.android.model.mpp.C_med
-import uk.co.explose.schminder.android.model.mpp.E_meds
-import uk.co.explose.schminder.android.model.mpp.C_med_indiv
+import uk.co.explose.schminder.android.model.mpp.Med
+import uk.co.explose.schminder.android.model.mpp.MedsRepo
+import uk.co.explose.schminder.android.model.mpp.MedIndiv
 import uk.co.explose.schminder.android.model.mpp.m_medication
 import uk.co.explose.schminder.android.model.mpp.med_search_tx
 
@@ -75,7 +77,7 @@ import uk.co.explose.schminder.android.model.mpp.med_search_tx
 @Composable
 fun PrescriptionScanScreen(navController: NavController) {
     val context = LocalContext.current
-    val _E_meds = E_meds(context)
+    val medsRepo = MedsRepo(context)
 
     val lifecycleOwner = LocalLifecycleOwner.current
     val activity = LocalContext.current as? Activity
@@ -85,7 +87,7 @@ fun PrescriptionScanScreen(navController: NavController) {
     activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED //ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
     val outputText = remember { mutableStateOf("Scan a prescription...") }
-    val parsedMeds = remember { mutableStateOf<List<C_med_indiv>>(emptyList()) }
+    val parsedMeds = remember { mutableStateOf<List<MedIndiv>>(emptyList()) }
     val scanComplete = remember { mutableStateOf(false) }
 
     val cameraPermission = android.Manifest.permission.CAMERA
@@ -98,7 +100,7 @@ fun PrescriptionScanScreen(navController: NavController) {
 
     LaunchedEffect(Unit) {
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        parsedMeds.value = _E_meds.getAllMedsIndiv()
+        parsedMeds.value = medsRepo.medIndivListAll()
     }
 
     DisposableEffect(Unit) {
@@ -154,8 +156,8 @@ fun PrescriptionScanScreen(navController: NavController) {
 
                                             // ✅ Insert into Room
                                             coroutineScope.launch {
-                                                val i_count = _E_meds.insertMedsIndiv(uniqueMeds)
-                                                Log.e("Medication insert", "Insert count ${i_count.count()}")
+                                                val iCount = medsRepo.medIndivInsertAll(uniqueMeds)
+                                                Log.e("Medication insert", "Insert count $iCount")
                                             }
                                         }
                                     }
@@ -200,7 +202,7 @@ fun PrescriptionScanScreen(navController: NavController) {
         }
 
         // Bottom overlay UI (displayed only if scan is complete)
-        if (scanComplete.value || true) {
+        if (true) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -229,7 +231,7 @@ fun PrescriptionScanScreen(navController: NavController) {
                             coroutineScope.launch {
                                 val _med_search_info = med_search_tx(med.medName, outputText.value)
                                 try {
-                                    val medicationDetail = _E_meds.doMedSearch(_med_search_info)
+                                    val medicationDetail = medsRepo.doMedSearch(_med_search_info)
 
                                     if (medicationDetail != null) {
                                         // Save to Room
@@ -251,7 +253,7 @@ fun PrescriptionScanScreen(navController: NavController) {
 
                             // Delete from Room
                             coroutineScope.launch {
-                                _E_meds.deleteMedByName(med.medName)
+                                medsRepo.medIndivDeleteByName(med.medName)
                             }
                         }) {
                             Icon(
@@ -297,8 +299,8 @@ fun PrescriptionScanScreen(navController: NavController) {
 
 fun parseMedicationsFromOcr(
     text: String,
-    knownMeds: List<C_med_indiv>
-): List<C_med_indiv> {
+    knownMeds: List<MedIndiv>
+): List<MedIndiv> {
     val words = text.split(Regex("""\W+"""))
         .map { it.lowercase() }
         .filter { it.isNotBlank() }

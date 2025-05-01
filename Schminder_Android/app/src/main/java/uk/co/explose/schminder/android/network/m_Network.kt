@@ -17,7 +17,7 @@ import uk.co.explose.schminder.android.model.firebase.r_FirebaseToken
 import uk.co.explose.schminder.android.model.firebase.s_FirebaseToken
 import uk.co.explose.schminder.android.model.login.LoginRequest
 import uk.co.explose.schminder.android.model.login.LoginResponse
-import uk.co.explose.schminder.android.model.mpp.m_medIndivInfo
+import uk.co.explose.schminder.android.model.mpp.MedIndivInfo
 import uk.co.explose.schminder.android.model.mpp.medInfo
 import uk.co.explose.schminder.android.model.mpp.med_search_tx
 import uk.co.explose.schminder.android.model.server_version.c_ServerVersion
@@ -40,7 +40,7 @@ interface ApiService {
     suspend fun postFirebaseToken(@Body token: s_FirebaseToken): Response<r_FirebaseToken>
 
     @GET("api/api_medindivlistall2_0")
-    suspend fun getMedsIndivList(): Response<m_medIndivInfo>
+    suspend fun getMedsIndivList(): Response<MedIndivInfo>
 
     @GET("api/api_medfinddetail")
     suspend fun doMedsSearch(@Body med_search: med_search_tx ): Response<medInfo>

@@ -15,6 +15,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -39,10 +41,13 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
 import uk.co.explose.schminder.android.core.AppGlobal
-import uk.co.explose.schminder.android.model.mpp.C_med
-import uk.co.explose.schminder.android.model.mpp.E_meds
+import uk.co.explose.schminder.android.model.mpp.Med
+import uk.co.explose.schminder.android.model.mpp.MedIndiv
+import uk.co.explose.schminder.android.model.mpp.MedIndivMed
+import uk.co.explose.schminder.android.model.mpp.MedsRepo
 import uk.co.explose.schminder.android.ui.components.ManageItem
 import uk.co.explose.schminder.android.ui.components.MedItem
+import uk.co.explose.schminder.android.ui.components.MedsScheduledTable
 
 @SuppressLint("ContextCastToActivity")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,15 +55,15 @@ import uk.co.explose.schminder.android.ui.components.MedItem
 fun MedicationsScreen(navController: NavHostController) {
     val context = LocalContext.current
     val activity = LocalContext.current as? Activity
-    val _E_meds = E_meds(context)
+    val medsRepo = MedsRepo(context)
     val coroutineScope = rememberCoroutineScope()
 
-    var meds by remember { mutableStateOf<List<C_med>>(emptyList()) }
+    var medGroups by remember { mutableStateOf<List<MedIndivMed>>(emptyList()) }
 
     AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - Medication"))
 
     LaunchedEffect(Unit) {
-        meds = _E_meds.getAllMeds()
+        medGroups = medsRepo.medIndivMedListAll()
     }
 
     Scaffold(
@@ -75,7 +80,7 @@ fun MedicationsScreen(navController: NavHostController) {
             )
         },
         content = { paddingValues ->
-            if (meds.isEmpty()) {
+            if (medGroups.isEmpty()) {
                 // 🟢 No meds found
                 Box(
                     modifier = Modifier
@@ -89,20 +94,23 @@ fun MedicationsScreen(navController: NavHostController) {
                     )
                 }
             } else {
-                LazyColumn(
-                    contentPadding = paddingValues
-                ) {
-                    items(items = meds) { med ->
+                LazyColumn(contentPadding = paddingValues) {
+                    items(medGroups) { group ->
+                        // Group header (med name)
                         MedItem(
                             icon = Icons.Filled.Person,
-                            label = med.medName,
+                            label = group.medIndiv.medName,
                             onClick = {
-                                navController.navigate("medDetail/${med.medName}")
+                                navController.navigate("medDetail/${group.medIndiv.medName}")
                             }
                         )
 
                     }
+                    item {
+                        MedsScheduledTable(medGroups)
+                    }
                 }
+
             }
         }
     )

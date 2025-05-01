@@ -15,13 +15,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun ManageItem(
-    icon: ImageVector,
+fun MedItem(
+    icon: ImageVector?,
     label: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable { onClick() },
@@ -32,7 +33,9 @@ fun ManageItem(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, contentDescription = label, modifier = Modifier.size(28.dp))
+            if (icon != null) {
+                Icon(icon, contentDescription = label, modifier = Modifier.size(28.dp))
+            }
             Spacer(modifier = Modifier.width(16.dp))
             Text(label, modifier = Modifier.weight(1f), fontSize = 18.sp)
             Icon(Icons.Filled.ChevronRight, contentDescription = null)

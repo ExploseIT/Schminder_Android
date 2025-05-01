@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun MedItem(
+fun ManageItem(
     icon: ImageVector,
     label: String,
     onClick: () -> Unit

@@ -34,9 +34,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import uk.co.explose.schminder.android.FabItem
 import uk.co.explose.schminder.android.core.AppGlobal
-import uk.co.explose.schminder.android.model.mpp.C_med
-import uk.co.explose.schminder.android.model.mpp.E_meds
-import uk.co.explose.schminder.android.model.mpp.C_med_indiv
+import uk.co.explose.schminder.android.model.mpp.Med
+import uk.co.explose.schminder.android.model.mpp.MedsRepo
+import uk.co.explose.schminder.android.model.mpp.MedIndiv
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.Locale
@@ -55,13 +55,13 @@ fun HomeScreen(navController: NavHostController) {
     var fabExpanded by remember { mutableStateOf(false) }
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_PORTRAIT //Configuration.ORIENTATION_LANDSCAPE
-    val parsedMeds = remember { mutableStateOf<List<C_med>>(emptyList()) }
-    val _E_meds = E_meds(context)
+    val parsedMeds = remember { mutableStateOf<List<MedIndiv>>(emptyList()) }
+    val _medsRepo = MedsRepo(context)
 
     AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - Home"))
 
     LaunchedEffect(Unit) {
-        parsedMeds.value = _E_meds.getAllMeds()
+        parsedMeds.value = _medsRepo.medIndivListAll()
     }
 
     Scaffold(

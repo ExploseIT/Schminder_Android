@@ -12,11 +12,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import uk.co.explose.schminder.android.model.mpp.C_med
+import uk.co.explose.schminder.android.model.mpp.Med
 
 @Composable
 fun MedicationItem(
-    med: C_med,
+    med: Med,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {

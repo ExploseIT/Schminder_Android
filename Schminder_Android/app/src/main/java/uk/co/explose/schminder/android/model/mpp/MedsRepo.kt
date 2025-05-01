@@ -9,19 +9,20 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.Transaction
 import uk.co.explose.schminder.android.network.RetrofitClient
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import java.time.LocalTime
 
 
-class E_meds(private val context: Context) {
+class MedsRepo(private val context: Context) {
 
     fun addMedsNew() {
 
     }
 
-    suspend fun doMedIndivLoad(): m_medIndivInfo? {
+    suspend fun doMedIndivLoad(): MedIndivInfo? {
         return try {
             val response = RetrofitClient.instance.getMedsIndivList()
             if (response.isSuccessful) {
@@ -49,13 +50,17 @@ class E_meds(private val context: Context) {
         }
     }
 
-    private val dao: MedsIndivDao by lazy {
+    private val daoMedsIndiv: MedsIndivDao by lazy {
         RoomInstance.getDatabase(context).medsIndivDao()
     }
 
-    suspend fun convertIndivToMeds(medsIndiv: List<C_med_indiv>): List<C_med> {
+    private val daoMeds: MedsDao by lazy {
+        RoomInstance.getDatabase(context).medsDao()
+    }
+
+    suspend fun convertIndivToMeds(medsIndiv: List<MedIndiv>): List<Med> {
         return medsIndiv.map { indiv ->
-            C_med(
+            Med(
                 medName = indiv.medName,
                 medInfo = "",
                 medScheduled = false,
@@ -65,37 +70,31 @@ class E_meds(private val context: Context) {
         }
     }
 
-    suspend fun insertMedsIndiv(medsIndiv: List<C_med_indiv>): List<C_med> {
-        val meds = convertIndivToMeds(medsIndiv)
-        val ids = dao.insertAll(meds)
+    suspend fun medIndivMedListAll(): List<MedIndivMed> {
+        return daoMedsIndiv.MedIndivMedListAll()
+    }
 
-        return meds.mapIndexed { index, med ->
-            med.copy(medId = ids[index])
-        }
+    suspend fun medIndivListAll(): List<MedIndiv> {
+        return daoMedsIndiv.medIndivList()
+    }
+
+    suspend fun medIndivInsertAll(meds: List<MedIndiv>) : List<Long> {
+        return daoMedsIndiv.medIndivInsertAll(meds)
+    }
+
+    suspend fun medIndivDeleteByName(medName: String)  {
+        return daoMedsIndiv.medDeleteByName(medName)
+    }
+
+    suspend fun medListAll() : List<Med> {
+        return daoMeds.medListAll()
+    }
+
+    suspend fun medInsert(med: Med) : Long {
+        return daoMeds.medInsert(med)
     }
 
 
-    suspend fun insertMeds(meds: List<C_med>) {
-        dao.insertAll(meds)
-    }
-
-    suspend fun editMedByName(medName: String, newInfo: String) {
-        dao.editOne(medName, newInfo)
-    }
-
-    suspend fun deleteMedByName(medName: String) {
-        dao.deleteOne(medName)
-    }
-
-    suspend fun getAllMeds(): List<C_med> {
-        return dao.getAll()
-    }
-
-    suspend fun getAllMedsIndiv(): List<C_med_indiv> {
-        return getAllMeds().map { cMed ->
-            C_med_indiv(medName = cMed.medName)
-        }
-    }
     object RoomInstance {
         @Volatile private var INSTANCE: AppDatabase? = null
 
@@ -115,23 +114,44 @@ class E_meds(private val context: Context) {
 
 @Dao
 interface MedsIndivDao {
-    @Query("SELECT * FROM meds_tbl")
-    suspend fun getAll(): List<C_med>
+    @Query("SELECT * FROM MedsIndivTbl")
+    suspend fun medIndivList(): List<MedIndiv>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(meds: List<C_med>): List<Long>
+    suspend fun medIndivInsertAll(meds: List<MedIndiv>): List<Long>
 
-    @Query("DELETE FROM meds_tbl WHERE medName = :medName")
-    suspend fun deleteOne(medName: String)
+    @Query("DELETE FROM MedsIndivTbl WHERE medName = :medName")
+    suspend fun medDeleteByName(medName: String)
 
-    @Query("UPDATE meds_tbl SET medInfo=:newInfo WHERE medName = :medName")
-    suspend fun editOne(medName: String, newInfo: String)
+    @Transaction
+    @Query("SELECT * FROM MedsIndivTbl")
+    suspend fun MedIndivMedListAll(): List<MedIndivMed>
 }
 
-@Database(entities = [C_med::class], version = 7)
+@Dao
+interface MedsDao {
+    @Query("SELECT * FROM MedsTbl")
+    suspend fun medListAll(): List<Med>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun medInsert(med: Med): Long
+
+    @Query("DELETE FROM MedsTbl WHERE medId = :medId")
+    suspend fun medDeleteById(medId: Int)
+
+}
+
+@Database(
+    entities = [
+        Med::class,
+        MedIndiv::class
+    ],
+    version = 9
+)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun medsIndivDao(): MedsIndivDao
+    abstract fun medsDao(): MedsDao
 }
 
 
