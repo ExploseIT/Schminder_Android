@@ -2,6 +2,9 @@
 package uk.co.explose.schminder.android.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,7 +22,9 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import uk.co.explose.schminder.android.core.AppGlobal
 import uk.co.explose.schminder.android.core.m_apg_data
+import uk.co.explose.schminder.android.ui.components.AppTopBar
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavHostController) {
     val context = LocalContext.current
@@ -31,7 +36,6 @@ fun SettingsScreen(navController: NavHostController) {
 
     AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - Settings"))
 
-    // ✅ Load data once when screen opens
     LaunchedEffect(Unit) {
         try {
             isLoading = true
@@ -43,56 +47,47 @@ fun SettingsScreen(navController: NavHostController) {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text("Settings")
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (isLoading) {
-            Text("Loading...", style = MaterialTheme.typography.bodyLarge)
-        } else if (error != null) {
-            Text("Error loading data: $error", style = MaterialTheme.typography.bodyLarge)
-        } else if (apg_data != null) {
-            Text("App Version: ${apg_data!!.m_versionName}", style = MaterialTheme.typography.bodyLarge)
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Meds Loaded: ${apg_data!!.m_medIndivInfo!!.medIndivList.count()}",
-                style = MaterialTheme.typography.bodyLarge
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Server Version: ${apg_data!!.m_serverVersion?.svVersion ?: "Loading..."}",
-                style = MaterialTheme.typography.bodyLarge
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(onClick = {
-            coroutineScope.launch {
-                try {
-                    isLoading = true
-                    AppGlobal.doFirebaseInit(context)
-                    apg_data = AppGlobal.doAPGDataRead()
-                } catch (e: Exception) {
-                    error = e.localizedMessage
-                } finally {
-                    isLoading = false
-                }
+    Scaffold(
+        /*topBar = {
+            AppTopBar(currentRoute = "settings", navController = navController)
+        }*/
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            if (isLoading) {
+                Text("Loading...", style = MaterialTheme.typography.bodyLarge)
+            } else if (error != null) {
+                Text("Error loading data: $error", style = MaterialTheme.typography.bodyLarge)
+            } else if (apg_data != null) {
+                Text("App Version: ${apg_data!!.m_versionName}", style = MaterialTheme.typography.bodyLarge)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Meds Loaded: ${apg_data!!.m_medIndivInfo!!.medIndivList.count()}", style = MaterialTheme.typography.bodyLarge)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Server Version: ${apg_data!!.m_serverVersion?.svVersion ?: "Loading..."}", style = MaterialTheme.typography.bodyLarge)
             }
-        }) {
-            Text("Reload data")
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        Button(onClick = { navController.navigateUp() }) {
-            Text("Back")
+            Button(onClick = {
+                coroutineScope.launch {
+                    try {
+                        isLoading = true
+                        AppGlobal.doFirebaseInit(context)
+                        apg_data = AppGlobal.doAPGDataRead()
+                    } catch (e: Exception) {
+                        error = e.localizedMessage
+                    } finally {
+                        isLoading = false
+                    }
+                }
+            }) {
+                Text("Reload data")
+            }
         }
     }
 }
-
 

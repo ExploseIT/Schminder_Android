@@ -10,6 +10,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,7 +40,13 @@ import java.time.LocalTime
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.*
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
 import uk.co.explose.schminder.android.model.mpp.Med
+import uk.co.explose.schminder.android.model.mpp.MedRepeatTypeEnum
+import uk.co.explose.schminder.android.model.mpp.MedsRepo
+import uk.co.explose.schminder.android.utils.setTime
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,21 +54,61 @@ import uk.co.explose.schminder.android.model.mpp.Med
 fun AddMedicationScheduleScreen(
     navController: NavHostController,
     medName: String = "Metformin",
-    onAdd: (Med) -> Unit
+    medId: Int = 0,
+    onSave: (Med) -> Unit,
+    onDelete: (Int) -> Unit
 ) {
     val timePickerState = rememberTimePickerState(initialHour = 12, initialMinute = 0, is24Hour = true)
     var showTimePicker by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
-    var frequency by remember { mutableStateOf("Once") }
+    var repeatType by remember { mutableStateOf("Once") }
     var durationCount by remember { mutableStateOf("1") }
     var durationUnit by remember { mutableStateOf("Days") }
 
-    val frequencyOptions = listOf("Once", "Daily")
+    val repeatTypeOptions = listOf(MedRepeatTypeEnum.Once, MedRepeatTypeEnum.Count, MedRepeatTypeEnum.Ongoing)
     val durationUnits = listOf("Days", "Weeks", "Months")
 
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val medsRepo = remember { MedsRepo(context) }
+
+    LaunchedEffect(medId) {
+        if (medId > 0) {
+            val med = medsRepo.medReadById(medId)
+            med?.let {
+                repeatType = it.medRepeatType.toString()
+                durationCount = it.medRepeatCount.toString()
+                durationUnit = it.medRepeatInterval.name
+                timePickerState.setTime(it.medTimeofday.hour, it.medTimeofday.minute)
+            }
+        }
+    }
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text(text = medName) })
+            TopAppBar(
+                title = { Text(text = if (medId > 0) "Edit $medName" else medName) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Cancel")
+                    }
+                },
+                actions = {
+                    if (medId > 0) {
+                        IconButton(onClick = { showDeleteDialog = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                        }
+                    }
+                    IconButton(onClick = {
+                        val time = LocalTime.of(timePickerState.hour, timePickerState.minute)
+                        val med = Med.createScheduledMed(medId, medName, time, repeatType, durationCount.toIntOrNull() ?: 1, durationUnit)
+                        onSave(med)
+                        navController.popBackStack()
+                    }) {
+                        Icon(Icons.Default.Save, contentDescription = "Save")
+                    }
+                }
+            )
         }
     ) { padding ->
         Column(
@@ -74,29 +125,21 @@ fun AddMedicationScheduleScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-
-            Text("Frequency")
+            Text("Repeat")
             Row {
-                frequencyOptions.forEach { option ->
+                repeatTypeOptions.forEach { option ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(end = 16.dp)
                     ) {
-                        RadioButton(
-                            selected = frequency == option,
-                            onClick = { frequency = option }
-                        )
-                        Text(option)
+                        RadioButton(selected = repeatType == option.toString(), onClick = { repeatType = option.toString() })
+                        Text(option.toString())
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(vertical = 8.dp)
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("For", modifier = Modifier.padding(end = 8.dp))
                 OutlinedTextField(
                     value = durationCount,
@@ -106,36 +149,18 @@ fun AddMedicationScheduleScreen(
                 )
             }
 
-// ROW: Duration units ("Days", "Weeks", "Months")
+            Spacer(modifier = Modifier.height(24.dp))
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 durationUnits.forEach { unit ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = durationUnit == unit,
-                            onClick = { durationUnit = unit }
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = durationUnit == unit, onClick = { durationUnit = unit })
                         Text(unit)
                     }
                 }
-            }
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Button(
-                onClick = {
-                    val time = LocalTime.of(timePickerState.hour, timePickerState.minute)
-                    onAdd(Med.createScheduledMed(medName, time, frequency, durationCount.toIntOrNull() ?: 1, durationUnit))
-                    navController.popBackStack()
-                }
-            ) {
-                Text("Add")
             }
         }
 
@@ -143,21 +168,38 @@ fun AddMedicationScheduleScreen(
             TimePickerDialog(
                 onDismissRequest = { showTimePicker = false },
                 confirmButton = {
-                    TextButton(onClick = { showTimePicker = false }) {
-                        Text("OK")
+                    TextButton(onClick = { showTimePicker = false }) { Text("OK") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
+                },
+                title = { Text("Select time") },
+                content = { TimePicker(state = timePickerState) }
+            )
+        }
+
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("Confirm Deletion") },
+                text = { Text("Are you sure you want to delete this medication schedule?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        onDelete(medId)
+                        showDeleteDialog = false
+                        navController.popBackStack()
+                    }) {
+                        Text("Proceed")
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showTimePicker = false }) {
+                    TextButton(onClick = { showDeleteDialog = false }) {
                         Text("Cancel")
                     }
-                },
-                title = { Text("Select time") },
-                content = {
-                    TimePicker(state = timePickerState)
                 }
             )
         }
+
     }
 }
 

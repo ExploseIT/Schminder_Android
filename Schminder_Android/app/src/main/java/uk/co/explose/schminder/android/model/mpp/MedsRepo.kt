@@ -13,6 +13,7 @@ import androidx.room.Transaction
 import uk.co.explose.schminder.android.network.RetrofitClient
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
+import java.time.LocalDate
 import java.time.LocalTime
 
 
@@ -70,12 +71,31 @@ class MedsRepo(private val context: Context) {
         }
     }
 
+    suspend fun convertIndivDtoToIndiv(medsIndiv: List<MedIndivDto>): List<MedIndiv> {
+        return medsIndiv.map { indiv ->
+            MedIndiv(
+                medName = indiv.medName,
+                medDateEntered = LocalDate.now()
+            )
+        }
+    }
+
     suspend fun medIndivMedListAll(): List<MedIndivMed> {
         return daoMedsIndiv.MedIndivMedListAll()
     }
 
     suspend fun medIndivListAll(): List<MedIndiv> {
         return daoMedsIndiv.medIndivList()
+    }
+
+    suspend fun medIndivDtoListAll(): List<MedIndivDto> {
+        return daoMedsIndiv.medIndivList()
+            .map { MedIndivDto(medName = it.medName) }
+    }
+
+    suspend fun medIndivDtoInsertAll(medsIndiv: List<MedIndivDto>) : List<Long> {
+        val meds = convertIndivDtoToIndiv(medsIndiv)
+        return daoMedsIndiv.medIndivInsertAll(meds)
     }
 
     suspend fun medIndivInsertAll(meds: List<MedIndiv>) : List<Long> {
@@ -92,6 +112,10 @@ class MedsRepo(private val context: Context) {
 
     suspend fun medInsert(med: Med) : Long {
         return daoMeds.medInsert(med)
+    }
+
+    suspend fun medReadById(id: Int): Med? {
+        return daoMeds.getMedById(id)
     }
 
 
@@ -139,6 +163,8 @@ interface MedsDao {
     @Query("DELETE FROM MedsTbl WHERE medId = :medId")
     suspend fun medDeleteById(medId: Int)
 
+    @Query("SELECT * FROM MedsTbl WHERE medId = :id LIMIT 1")
+    suspend fun getMedById(id: Int): Med?
 }
 
 @Database(
@@ -146,8 +172,10 @@ interface MedsDao {
         Med::class,
         MedIndiv::class
     ],
-    version = 9
+    version = 13
 )
+
+
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun medsIndivDao(): MedsIndivDao
@@ -163,10 +191,21 @@ class Converters {
     fun toLocalTime(value: String): LocalTime = LocalTime.parse(value)
 
     @TypeConverter
-    fun fromMedRecurIntervalEnum(value: MedRecurIntervalEnum): String = value.name
+    fun fromLocalDate(date: LocalDate): String = date.toString()
 
     @TypeConverter
-    fun toMedRecurIntervalEnum(value: String): MedRecurIntervalEnum = MedRecurIntervalEnum.valueOf(value)
+    fun toLocalDate(value: String): LocalDate = LocalDate.parse(value)
 
+    @TypeConverter
+    fun fromMedRecurIntervalEnum(value: MedRepeatIntervalEnum): String = value.name
+
+    @TypeConverter
+    fun toMedRepeatIntervalEnum(value: String): MedRepeatIntervalEnum = MedRepeatIntervalEnum.valueOf(value)
+
+    @TypeConverter
+    fun fromMedRepeatTypeEnum(value: MedRepeatTypeEnum): String = value.name
+
+    @TypeConverter
+    fun toMedRecurTypeEnum(value: String): MedRepeatTypeEnum = MedRepeatTypeEnum.valueOf(value)
 }
 

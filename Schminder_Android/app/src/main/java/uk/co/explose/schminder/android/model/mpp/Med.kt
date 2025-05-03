@@ -7,20 +7,34 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 import androidx.room.Relation
+import java.time.LocalDate
 import java.time.LocalTime
 
+data class MedIndivDto(
+    val medName: String
+)
 
 
 data class MedIndivInfo (
     var medIndivName: String,
-    var medIndivList: List<MedIndiv>
+    var medIndivList: List<MedIndivDto>
 )
 
 @Entity(tableName = "MedsIndivTbl")
-data class MedIndiv (
-    @PrimaryKey
-    val medName: String
-)
+data class MedIndiv(
+    @PrimaryKey val medName: String,
+    val medDateEntered: LocalDate
+) {
+    companion object {
+        fun fromDto(dto: MedIndivDto): MedIndiv {
+            return MedIndiv(
+                medName = dto.medName,
+                medDateEntered = LocalDate.now()
+            )
+        }
+    }
+}
+
 
 
 @Entity(
@@ -41,26 +55,30 @@ data class Med(
     val medScheduled: Boolean = false,
     val medInfo: String = "",
     val medTimeofday: LocalTime = LocalTime.of(0, 0),
-    val medRecurring: Boolean = false,
-    val medRecurCount: Int = 0,
-    val medRecurInterval: MedRecurIntervalEnum = MedRecurIntervalEnum.Days,
+    val medRepeatType: MedRepeatTypeEnum = MedRepeatTypeEnum.Ongoing,
+    val medRepeatCount: Int = 0,
+    val medRepeatInterval: MedRepeatIntervalEnum = MedRepeatIntervalEnum.Days,
     val medName: String
 ) {
     companion object {
         fun createScheduledMed(
+            id: Int,
             name: String,
             time: LocalTime,
-            frequency: String,
-            count: Int,
-            unit: String
+            repeatType: String,
+            repeatCount: Int,
+            repeatInterval: String
         ): Med {
             return Med(
+                medId = id,
                 medName = name,
                 medTimeofday = time,
-                medRecurring = frequency.lowercase() != "once",
-                medRecurCount = count,
-                medRecurInterval = MedRecurIntervalEnum.valueOf(
-                    unit.replaceFirstChar { it.uppercase() }
+                medRepeatType = MedRepeatTypeEnum.valueOf(
+                    repeatType.replaceFirstChar { it.uppercase() }
+                ),
+                medRepeatCount = repeatCount,
+                medRepeatInterval = MedRepeatIntervalEnum.valueOf(
+                    repeatInterval.replaceFirstChar { it.uppercase() }
                 ),
                 medScheduled = true
             )
@@ -78,8 +96,14 @@ data class MedIndivMed(
     val schedules: List<Med>
 )
 
-enum class MedRecurIntervalEnum(val label: String) {
+enum class MedRepeatIntervalEnum(val label: String) {
     Days("mriDays"),
     Weeks("mriWeeks"),
     Months("mriMonths")
+}
+
+enum class MedRepeatTypeEnum(val label: String) {
+    Once("mrtOnce"),
+    Count("mrtRepeat"),
+    Ongoing("mrtOngoing")
 }

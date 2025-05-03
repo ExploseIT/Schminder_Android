@@ -32,11 +32,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import uk.co.explose.schminder.android.FabItem
 import uk.co.explose.schminder.android.core.AppGlobal
 import uk.co.explose.schminder.android.model.mpp.Med
 import uk.co.explose.schminder.android.model.mpp.MedsRepo
 import uk.co.explose.schminder.android.model.mpp.MedIndiv
+import uk.co.explose.schminder.android.ui.components.FabItem
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.Locale
@@ -203,15 +203,6 @@ fun HomeScreen(navController: NavHostController) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Now show list of scanned medications from parsedMeds : <List<m_med_indiv>>
-
-            /*
-            Test code for Crashlytics
-            Button (onClick = { throw RuntimeException("Test crash")}
-            ) {
-                Text("Test crash")
-            }
-            */
         }
     }
 }

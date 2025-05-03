@@ -30,7 +30,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.currentBackStackEntryAsState
 import kotlinx.coroutines.launch
+import uk.co.explose.schminder.android.app.AppScaffoldWithDrawer
 
 
 import uk.co.explose.schminder.android.core.AppGlobal
@@ -48,64 +50,10 @@ import uk.co.explose.schminder.android.ui.screens.PrescriptionScanScreen
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SchminderMain() {
-    val navController = rememberNavController()
-    var error by remember { mutableStateOf<String?>(null) }
-
-    val configuration = LocalConfiguration.current
-
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    LaunchedEffect(Unit) {
-        //activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        AppGlobal.logEvent("test_event", mapOf("origin" to "SchminderMain"))
-    }
-
-    Scaffold(
-        topBar = { AppTopBar(currentRoute = "mockup", navController) },
-        bottomBar = { AppBottomBar(currentRoute = "mockup", navController) },
-
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = "home",
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable("home") { HomeScreen(navController) }
-            composable("settings") { SettingsScreen(navController) }
-            composable("add_med") { AddMedScreen(navController) }
-            composable("plan") { PlanScreen(navController) }
-            composable("medications") { MedicationsScreen(navController) }
-            composable("mockup") { ManageScreen(navController) }
-            // Add this screen in the future for scan
-            composable("prescription_scan") { PrescriptionScanScreen(navController)  }
-            composable("medDetail/{medName}") { backStackEntry ->
-                val medName = backStackEntry.arguments?.getString("medName")
-                AddMedicationScheduleScreen(
-                    navController = navController,
-                    medName = medName ?: "Unknown",
-                    onAdd = { cMed ->
-                        println("Add clicked for $cMed->name at $cMed->time - $cMed->frequency for $cMed->count $cMed->unit")
-                        scope.launch {
-                            val iCount = MedsRepo(context).medInsert(cMed)
-                        }
-                    }
-                )
-            }
-        }
-    }
+    AppScaffoldWithDrawer()
 }
 
-@Composable
-fun FabItem(icon: ImageVector, label: String, onClick: () -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        SmallFloatingActionButton(onClick = onClick) {
-            Icon(imageVector = icon, contentDescription = label)
-        }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-    }
-}
+
+
+
 
