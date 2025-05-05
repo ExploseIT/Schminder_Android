@@ -44,6 +44,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import uk.co.explose.schminder.android.model.mpp.Med
+import uk.co.explose.schminder.android.model.mpp.MedRepeatIntervalEnum
 import uk.co.explose.schminder.android.model.mpp.MedRepeatTypeEnum
 import uk.co.explose.schminder.android.model.mpp.MedsRepo
 import uk.co.explose.schminder.android.utils.setTime
@@ -62,12 +63,12 @@ fun AddMedicationScheduleScreen(
     var showTimePicker by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    var repeatType by remember { mutableStateOf("Once") }
+    var repeatType by remember { mutableStateOf(MedRepeatTypeEnum.Ongoing) }
     var durationCount by remember { mutableStateOf("1") }
     var durationUnit by remember { mutableStateOf("Days") }
 
     val repeatTypeOptions = listOf(MedRepeatTypeEnum.Once, MedRepeatTypeEnum.Count, MedRepeatTypeEnum.Ongoing)
-    val durationUnits = listOf("Days", "Weeks", "Months")
+    val durationUnits = listOf(MedRepeatIntervalEnum.Days, MedRepeatIntervalEnum.Weeks, MedRepeatIntervalEnum.Months)
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -77,7 +78,7 @@ fun AddMedicationScheduleScreen(
         if (medId > 0) {
             val med = medsRepo.medReadById(medId)
             med?.let {
-                repeatType = it.medRepeatType.toString()
+                repeatType = it.medRepeatType
                 durationCount = it.medRepeatCount.toString()
                 durationUnit = it.medRepeatInterval.name
                 timePickerState.setTime(it.medTimeofday.hour, it.medTimeofday.minute)
@@ -101,7 +102,7 @@ fun AddMedicationScheduleScreen(
                     }
                     IconButton(onClick = {
                         val time = LocalTime.of(timePickerState.hour, timePickerState.minute)
-                        val med = Med.createScheduledMed(medId, medName, time, repeatType, durationCount.toIntOrNull() ?: 1, durationUnit)
+                        val med = Med.createScheduledMed(medId, medName, time, repeatType.toString(), durationCount.toIntOrNull() ?: 1, durationUnit)
                         onSave(med)
                         navController.popBackStack()
                     }) {
@@ -132,7 +133,7 @@ fun AddMedicationScheduleScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(end = 16.dp)
                     ) {
-                        RadioButton(selected = repeatType == option.toString(), onClick = { repeatType = option.toString() })
+                        RadioButton(selected = repeatType == option, onClick = { repeatType = option })
                         Text(option.toString())
                     }
                 }
@@ -157,8 +158,8 @@ fun AddMedicationScheduleScreen(
             ) {
                 durationUnits.forEach { unit ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = durationUnit == unit, onClick = { durationUnit = unit })
-                        Text(unit)
+                        RadioButton(selected = durationUnit == unit.toString(), onClick = { durationUnit = unit.toString() })
+                        Text(unit.toString())
                     }
                 }
             }

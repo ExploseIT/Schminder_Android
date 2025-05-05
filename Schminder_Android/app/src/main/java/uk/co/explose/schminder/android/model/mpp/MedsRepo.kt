@@ -36,6 +36,19 @@ class MedsRepo(private val context: Context) {
             null
         }
     }
+    suspend fun doMedIndivActionTx(medIndivInfo: MedIndivActionTx): MedIndivActionRx? {
+        return try {
+            val response = RetrofitClient.instance.doMedIndivActionTx(medIndivInfo)
+            if (response.isSuccessful) {
+                response.body()
+            } else {
+                null // handle error (optional: log or throw)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
 
     suspend fun doMedSearch(med_search: med_search_tx): medInfo? {
         return try {

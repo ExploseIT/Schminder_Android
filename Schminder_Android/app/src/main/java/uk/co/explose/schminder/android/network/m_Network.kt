@@ -13,10 +13,12 @@ import retrofit2.http.Header
 import retrofit2.http.POST
 import uk.co.explose.schminder.android.BuildConfig
 import uk.co.explose.schminder.android.core.AppGlobal
-import uk.co.explose.schminder.android.model.firebase.r_FirebaseToken
-import uk.co.explose.schminder.android.model.firebase.s_FirebaseToken
+import uk.co.explose.schminder.android.model.firebase.FirebaseTokenRx
+import uk.co.explose.schminder.android.model.firebase.FirebaseTokenTx
 import uk.co.explose.schminder.android.model.login.LoginRequest
 import uk.co.explose.schminder.android.model.login.LoginResponse
+import uk.co.explose.schminder.android.model.mpp.MedIndivActionRx
+import uk.co.explose.schminder.android.model.mpp.MedIndivActionTx
 import uk.co.explose.schminder.android.model.mpp.MedIndivInfo
 import uk.co.explose.schminder.android.model.mpp.medInfo
 import uk.co.explose.schminder.android.model.mpp.med_search_tx
@@ -36,14 +38,17 @@ interface ApiService {
     @GET("api/api_ServerVersion2_0")
     suspend fun getServerVersion(): Response<c_ServerVersion>
 
-    @POST("api/api_FirebaseToken")
-    suspend fun postFirebaseToken(@Body token: s_FirebaseToken): Response<r_FirebaseToken>
+    @POST("api/api_FirebaseToken2_0")
+    suspend fun postFirebaseToken(@Body token: FirebaseTokenTx): Response<FirebaseTokenRx>
 
     @GET("api/api_medindivlistall2_0")
     suspend fun getMedsIndivList(): Response<MedIndivInfo>
 
     @GET("api/api_medfinddetail")
     suspend fun doMedsSearch(@Body med_search: med_search_tx ): Response<medInfo>
+
+    @POST("api/api_MedIndivActionTx")
+    suspend fun doMedIndivActionTx(@Body medInfo: MedIndivActionTx ): Response<MedIndivActionRx>
 }
 
 object RetrofitClient {
@@ -53,7 +58,7 @@ object RetrofitClient {
         val tokenInfo = AppGlobal.doAPGDataRead().mFirebaseTokenInfo
         var token = ""
         if (tokenInfo != null) {
-            token = tokenInfo.fbt_token
+            token = tokenInfo.fbtToken
         }
 
         val gson = GsonBuilder()

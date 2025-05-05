@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import uk.co.explose.schminder.android.model.mpp.MedIndivMed
+import uk.co.explose.schminder.android.model.mpp.MedRepeatTypeEnum
 
 @Composable
 fun MedsScheduledTable(navController: NavHostController, medGroups: List<MedIndivMed>) {
@@ -76,47 +77,24 @@ fun MedsScheduledTable(navController: NavHostController, medGroups: List<MedIndi
         // All group rows
         medGroups.forEach { group ->
             group.schedules.forEach { med ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(med.medName, Modifier.weight(nameWeight), fontSize = 13.sp)
-                    Text(
-                        med.medTimeofday.toString(),
-                        Modifier.weight(timeWeight),
-                        fontSize = 13.sp,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        med.medRepeatType.toString(),
-                        Modifier.weight(freqWeight),
-                        fontSize = 13.sp,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        "${med.medRepeatCount} ${med.medRepeatInterval.name.uppercase()}",
-                        Modifier.weight(durWeight),
-                        fontSize = 13.sp,
-                        textAlign = TextAlign.Center
-                    )
-                    Row(
-                        Modifier.weight(actionWeight),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        IconButton(onClick = {
-                            navController.navigate("medDetail/${med.medName}?medId=${med.medId}")
-                        }, modifier = Modifier.size(20.dp)) {
-                            Icon(
-                                Icons.Filled.ChevronRight,
-                                contentDescription = "Edit",
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
+                var sDuration = ""
+                if (med.medRepeatType == MedRepeatTypeEnum.Ongoing) {
+                    sDuration = " • ${med.medRepeatType}"
+                } else if (med.medRepeatType == MedRepeatTypeEnum.Once) {
+                    sDuration = " • ${med.medRepeatType}"
+                } else if (med.medRepeatType == MedRepeatTypeEnum.Count) {
+                    sDuration = "${med.medRepeatCount} ${med.medRepeatInterval.name.uppercase()} • ${med.medRepeatType}"
                 }
 
+                MedicationScheduleItem(
+                    name = med.medName,
+                    notes = "Tap for details", // or med.note if available
+                    time = med.medTimeofday.toString(),
+                    duration = sDuration,
+                    onClick = {
+                        navController.navigate("medDetail/${med.medName}?medId=${med.medId}")
+                    }
+                )
             }
         }
     }

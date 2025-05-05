@@ -7,9 +7,9 @@ import java.io.IOException
 
 class e_Firebase {
 
-    suspend fun pFirebaseToken(s_fbtoken: s_FirebaseToken): r_FirebaseToken? {
+    suspend fun pFirebaseToken(fbtokenTx: FirebaseTokenTx): FirebaseTokenRx? {
         return try {
-            val response = RetrofitClient.instance.postFirebaseToken(s_fbtoken)
+            val response = RetrofitClient.instance.postFirebaseToken(fbtokenTx)
             if (response.isSuccessful) {
                 response.body()
             } else {
