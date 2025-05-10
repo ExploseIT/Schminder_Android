@@ -28,6 +28,7 @@ import uk.co.explose.schminder.android.utils.OffsetDateTimeAdapter
 import java.time.OffsetDateTime
 
 
+// --- API SERVICE ---
 interface ApiService {
     @GET("api/users/profile")
     suspend fun getUserProfile(@Header("Authorization") token: String): Response<UserProfile>
@@ -45,46 +46,41 @@ interface ApiService {
     suspend fun getMedsIndivList(): Response<MedIndivInfo>
 
     @GET("api/api_medfinddetail")
-    suspend fun doMedsSearch(@Body med_search: med_search_tx ): Response<medInfo>
+    suspend fun doMedsSearch(@Body med_search: med_search_tx): Response<medInfo>
 
     @POST("api/api_MedIndivActionTx")
-    suspend fun doMedIndivActionTx(@Body medInfo: MedIndivActionTx ): Response<MedIndivActionRx>
+    suspend fun doMedIndivActionTx(@Body medInfo: MedIndivActionTx): Response<MedIndivActionRx>
 }
 
 object RetrofitClient {
     private const val BASE_URL = BuildConfig.BASE_URL
 
-    val instance: ApiService by lazy {
-        val tokenInfo = AppGlobal.doAPGDataRead().mFirebaseTokenInfo
-        var token = ""
-        if (tokenInfo != null) {
-            token = tokenInfo.fbtToken
-        }
+    private val gson = GsonBuilder()
+        .registerTypeAdapter(OffsetDateTime::class.java, OffsetDateTimeAdapter())
+        .create()
 
-        val gson = GsonBuilder()
-            .registerTypeAdapter(OffsetDateTime::class.java, OffsetDateTimeAdapter())
-            .create()
+    private val okHttpClient: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val original = chain.request()
+                val requestBuilder = original.newBuilder()
 
-        // 👇 Interceptor to add Authorization Header
-        val authInterceptor = Interceptor { chain ->
-            val requestBuilder = chain.request().newBuilder()
-            if (token.isNotEmpty()) {
-                requestBuilder.addHeader("Authorization", "Bearer $token")
+                val token = AppGlobal.doAPGDataRead().mFirebaseTokenInfo?.fbtToken
+                if (!token.isNullOrBlank()) {
+                    requestBuilder.addHeader("Authorization", "Bearer $token")
+                }
+
+                chain.proceed(requestBuilder.build())
             }
-            chain.proceed(requestBuilder.build())
-        }
-
-        val okHttpClient = OkHttpClient.Builder()
-            .addInterceptor(authInterceptor)
             .build()
+    }
 
-        val retrofit = Retrofit.Builder()
+    val api: ApiService by lazy {
+        Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .client(okHttpClient) // 👈 Attach the client with the header
+            .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
-
-        retrofit.create(ApiService::class.java)
+            .create(ApiService::class.java)
     }
 }
-

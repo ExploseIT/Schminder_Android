@@ -81,7 +81,7 @@ fun PrescriptionScanScreen(navController: NavController) {
 
     activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED //ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
-    val fbtUserUid = AppGlobal.doAPGDataRead().mFirebaseTokenInfo!!.fbtUid
+    val fbtUserUid = AppGlobal.doAPGDataRead().mFirebaseTokenInfo?.fbtUid ?: ""
 
     val outputText = remember { mutableStateOf("Scan a prescription...") }
     val parsedMeds = remember { mutableStateOf<List<MedIndivDto>>(emptyList()) }

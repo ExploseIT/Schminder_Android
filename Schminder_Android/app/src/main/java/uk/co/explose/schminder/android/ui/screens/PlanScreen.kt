@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import uk.co.explose.schminder.android.core.AppGlobal
+import uk.co.explose.schminder.android.ui.components.SchminderTopBar
 
 data class RefillItem(
     val id: Int,
@@ -20,6 +21,9 @@ data class RefillItem(
 @Composable
 fun PlanScreen(navController: NavHostController) {
     AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - Plan"))
+
+    val userName = AppGlobal.doAPGDataRead().mFirebaseTokenInfo?.fbtUserName ?: "Guest"
+
     val refillList = remember {
         listOf(
             RefillItem(1, "Stay on top of your prescription refills", "Track your meds stock and set refill reminders...", true),
@@ -28,7 +32,6 @@ fun PlanScreen(navController: NavHostController) {
     }
 
     Scaffold(
-        //bottomBar = { AppBottomBar(currentRoute = "mockup", navController) }
     ) { innerPadding ->
         LazyColumn(modifier = Modifier.padding(innerPadding)) {
 

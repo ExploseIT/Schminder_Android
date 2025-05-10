@@ -21,8 +21,8 @@ android {
         applicationId = "uk.co.explose.schminder.android"
         minSdk = 27
         targetSdk = 36
-        versionCode = 13
-        versionName = "1.0.1.13"
+        versionCode = 14
+        versionName = "1.0.1.14"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

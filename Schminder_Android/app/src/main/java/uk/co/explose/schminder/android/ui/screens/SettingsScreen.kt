@@ -23,28 +23,26 @@ import kotlinx.coroutines.launch
 import uk.co.explose.schminder.android.core.AppGlobal
 import uk.co.explose.schminder.android.core.m_apg_data
 import uk.co.explose.schminder.android.ui.components.AppTopBar
+import uk.co.explose.schminder.android.ui.viewmodels.HomeScreenVM
+import uk.co.explose.schminder.android.ui.viewmodels.SettingsScreenVM
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavHostController) {
     val context = LocalContext.current
+    // ✅ Instantiate ViewModel with context (use remember if you're constructing manually)
+    val thisVM: SettingsScreenVM = remember { SettingsScreenVM(context) }
+
     val coroutineScope = rememberCoroutineScope()
 
-    var apg_data by remember { mutableStateOf<m_apg_data?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
+    val apg_data = thisVM.apg_data
+    val isLoading = thisVM.isLoading
+    val error = thisVM.errorMessage
 
     AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - Settings"))
 
     LaunchedEffect(Unit) {
-        try {
-            isLoading = true
-            apg_data = AppGlobal.doAPGDataRead()
-        } catch (e: Exception) {
-            error = e.localizedMessage
-        } finally {
-            isLoading = false
-        }
+        thisVM.loadVM()
     }
 
     Scaffold(
@@ -62,7 +60,7 @@ fun SettingsScreen(navController: NavHostController) {
                 Text("Loading...", style = MaterialTheme.typography.bodyLarge)
             } else if (error != null) {
                 Text("Error loading data: $error", style = MaterialTheme.typography.bodyLarge)
-            } else if (apg_data != null) {
+            } else if (apg_data!!.isLoaded()) {
                 Text("App Version: ${apg_data!!.m_versionName}", style = MaterialTheme.typography.bodyLarge)
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("Meds Loaded: ${apg_data!!.m_medIndivInfo!!.medIndivList.count()}", style = MaterialTheme.typography.bodyLarge)
@@ -73,20 +71,11 @@ fun SettingsScreen(navController: NavHostController) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(onClick = {
-                coroutineScope.launch {
-                    try {
-                        isLoading = true
-                        AppGlobal.doFirebaseInit(context)
-                        apg_data = AppGlobal.doAPGDataRead()
-                    } catch (e: Exception) {
-                        error = e.localizedMessage
-                    } finally {
-                        isLoading = false
-                    }
-                }
+                thisVM.loadVM()
             }) {
                 Text("Reload data")
             }
+
         }
     }
 }

@@ -9,7 +9,7 @@ class e_Firebase {
 
     suspend fun pFirebaseToken(fbtokenTx: FirebaseTokenTx): FirebaseTokenRx? {
         return try {
-            val response = RetrofitClient.instance.postFirebaseToken(fbtokenTx)
+            val response = RetrofitClient.api.postFirebaseToken(fbtokenTx)
             if (response.isSuccessful) {
                 response.body()
             } else {

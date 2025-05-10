@@ -16,7 +16,9 @@ data class FirebaseTokenRx (
     var fbtLastUsedAt: OffsetDateTime?,
     var fbtIsAnonymous: Boolean,
     var fbtStatus: String,
-    var fbtError: String
+    var fbtError: String,
+
+    var fbtUserName: String = "Guest"
 ) {
     companion object {
         fun from(fbtToken: String, fbtVersion: String?, firebaseUser: FirebaseUser): FirebaseTokenRx {

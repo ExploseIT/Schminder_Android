@@ -4,8 +4,10 @@ package uk.co.explose.schminder.android.model.mpp
 import android.content.Context
 import androidx.room.Dao
 import androidx.room.Database
+import androidx.room.Entity
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
+import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -13,8 +15,13 @@ import androidx.room.Transaction
 import uk.co.explose.schminder.android.network.RetrofitClient
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
+import kotlin.text.insert
+import kotlin.toString
 
 
 class MedsRepo(private val context: Context) {
@@ -25,7 +32,7 @@ class MedsRepo(private val context: Context) {
 
     suspend fun doMedIndivLoad(): MedIndivInfo? {
         return try {
-            val response = RetrofitClient.instance.getMedsIndivList()
+            val response = RetrofitClient.api.getMedsIndivList()
             if (response.isSuccessful) {
                 response.body()
             } else {
@@ -38,7 +45,7 @@ class MedsRepo(private val context: Context) {
     }
     suspend fun doMedIndivActionTx(medIndivInfo: MedIndivActionTx): MedIndivActionRx? {
         return try {
-            val response = RetrofitClient.instance.doMedIndivActionTx(medIndivInfo)
+            val response = RetrofitClient.api.doMedIndivActionTx(medIndivInfo)
             if (response.isSuccessful) {
                 response.body()
             } else {
@@ -52,7 +59,7 @@ class MedsRepo(private val context: Context) {
 
     suspend fun doMedSearch(med_search: med_search_tx): medInfo? {
         return try {
-            val response = RetrofitClient.instance.doMedsSearch(med_search)
+            val response = RetrofitClient.api.doMedsSearch(med_search)
             if (response.isSuccessful) {
                 response.body()
             } else {
@@ -64,12 +71,17 @@ class MedsRepo(private val context: Context) {
         }
     }
 
+
     private val daoMedsIndiv: MedsIndivDao by lazy {
         RoomInstance.getDatabase(context).medsIndivDao()
     }
 
     private val daoMeds: MedsDao by lazy {
         RoomInstance.getDatabase(context).medsDao()
+    }
+
+    private val daoSettings: SettingsDao by lazy {
+        RoomInstance.getDatabase(context).settingsDao()
     }
 
     suspend fun convertIndivToMeds(medsIndiv: List<MedIndiv>): List<Med> {
@@ -79,7 +91,8 @@ class MedsRepo(private val context: Context) {
                 medInfo = "",
                 medScheduled = false,
                 medPid = 0,
-                medId = 0
+                medId = 0,
+                medDateStart = LocalDate.now()
             )
         }
     }
@@ -132,8 +145,32 @@ class MedsRepo(private val context: Context) {
     }
 
 
+    suspend fun insertSettings(key: String,value: String) {
+        daoSettings.insert(ScheduleSetting(key, value))
+    }
+
+    suspend fun loadSettings(): Map<String,String?> {
+        val list = daoSettings.getAll()
+        val settings = list.associate { it.setKey to it.setValue }
+        return settings
+    }
+
+
+
     object RoomInstance {
         @Volatile private var INSTANCE: AppDatabase? = null
+        val MIGRATION_16_17 = object : Migration(16, 17) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+            CREATE TABLE IF NOT EXISTS settingsTbl (
+        setKey TEXT NOT NULL PRIMARY KEY,
+        setValue TEXT NOT NULL
+    )
+            """.trimIndent()
+                )
+            }
+        }
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -142,12 +179,33 @@ class MedsRepo(private val context: Context) {
                     AppDatabase::class.java,
                     "schminder_db"
                 )
-                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration(true)
+                    //.addMigrations(MIGRATION_16_17)
                     .build().also { INSTANCE = it }
             }
         }
     }
 }
+
+// 1. Define the Room Entity
+@Entity(tableName = "settingsTbl")
+data class ScheduleSetting(
+    @PrimaryKey val setKey: String,
+    val setValue: String
+)
+
+@Dao
+interface SettingsDao {
+    @Query("SELECT * FROM settingsTbl")
+    suspend fun getAll(): List<ScheduleSetting>
+
+    @Query("SELECT setValue FROM settingsTbl WHERE setKey = :key")
+    suspend fun getValue(key: String): String
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(setting: ScheduleSetting)
+}
+
 
 @Dao
 interface MedsIndivDao {
@@ -180,19 +238,21 @@ interface MedsDao {
     suspend fun getMedById(id: Int): Med?
 }
 
+
 @Database(
     entities = [
         Med::class,
-        MedIndiv::class
+        MedIndiv::class,
+        ScheduleSetting::class
     ],
-    version = 13
+    version = 18
 )
-
 
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun medsIndivDao(): MedsIndivDao
     abstract fun medsDao(): MedsDao
+    abstract fun settingsDao(): SettingsDao
 }
 
 
@@ -220,5 +280,15 @@ class Converters {
 
     @TypeConverter
     fun toMedRecurTypeEnum(value: String): MedRepeatTypeEnum = MedRepeatTypeEnum.valueOf(value)
+
+    @TypeConverter
+    fun fromLocalDateTime(dateTime: LocalDateTime?): String? {
+        return dateTime?.toString()
+    }
+
+    @TypeConverter
+    fun toLocalDateTime(value: String?): LocalDateTime? {
+        return value?.let { LocalDateTime.parse(it) }
+    }
 }
 

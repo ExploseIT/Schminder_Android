@@ -31,7 +31,7 @@ import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
 import uk.co.explose.schminder.android.model.mpp.MedsRepo
 import uk.co.explose.schminder.android.ui.components.AppBottomBar
-import uk.co.explose.schminder.android.ui.components.AppTopBar
+import uk.co.explose.schminder.android.ui.components.SchminderTopBar
 import uk.co.explose.schminder.android.ui.screens.AddMedScreen
 import uk.co.explose.schminder.android.ui.screens.AddMedicationScheduleScreen
 import uk.co.explose.schminder.android.ui.screens.HomeScreen
@@ -76,14 +76,15 @@ fun AppScaffoldWithDrawer() {
     ) {
         Scaffold(
             topBar = {
-                AppTopBar(
-                    currentRoute = currentRoute,
-                    navController = navController,
-                    authMode = authMode.value,
+                SchminderTopBar(
+                    userName = authMode.value,
+                    showBackButton = currentRoute != "home" && currentRoute != "plan" && currentRoute != "medications" && currentRoute != "mockup",
+                    onBackClick = { navController.popBackStack() },
+                    onNotificationClick = {
+                        //navController.navigate("notifications")
+                    },
                     onProfileClick = {
-                        scope.launch {
-                            drawerState.open()
-                        }
+                        scope.launch { drawerState.open() } // 👈 open drawer
                     }
                 )
             },

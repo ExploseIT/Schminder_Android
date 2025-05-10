@@ -17,6 +17,7 @@ import uk.co.explose.schminder.android.model.mpp.MedsRepo
 import uk.co.explose.schminder.android.model.mpp.MedIndivInfo
 import uk.co.explose.schminder.android.model.server_version.c_ServerVersion
 import uk.co.explose.schminder.android.network.RetrofitClient
+import uk.co.explose.schminder.android.ui.viewmodels.SettingsScreenVM
 
 
 object AppGlobal {
@@ -45,18 +46,15 @@ object AppGlobal {
                         m_apg = m_apg_data()
                         m_apg.m_versionName = context.packageManager
                             .getPackageInfo(context.packageName, 0).versionName
-                        val fbtokenTx = FirebaseTokenTx(fbtToken = idToken.toString(),
+                        m_apg.mFirebaseToken = FirebaseTokenTx(fbtToken = idToken.toString(),
                             fbtVersion = m_apg.m_versionName ?: ""
                         )
-                        m_apg.mFirebaseTokenInfo = FirebaseTokenRx.from(fbtokenTx.fbtToken,
+                        m_apg.mFirebaseTokenInfo = FirebaseTokenRx.from(m_apg.mFirebaseToken!!.fbtToken,
                             m_apg.m_versionName ?: "", firebaseUser)
                         CoroutineScope(Dispatchers.IO).launch {
                             try {
-                                m_apg.mFirebaseTokenInfo  = e_Firebase().pFirebaseToken(fbtokenTx)
-
-                                m_apg.m_medIndivInfo =  MedsRepo(context).doMedIndivLoad()
-                                m_apg.m_serverVersion = fetchServerVersion()
-
+                                doAPGDataLoad(context, m_apg.mFirebaseToken!!)
+                                SettingsScreenVM(context).initCheckSetting()
                             } catch (ex: Exception) {
                                 onError(ex)
                             }
@@ -65,6 +63,17 @@ object AppGlobal {
                 }
             }
     }
+
+    suspend fun doAPGDataLoad(context: Context, fbToken: FirebaseTokenTx) {
+        m_apg.mFirebaseTokenInfo  = e_Firebase().pFirebaseToken(fbToken)
+
+        m_apg.m_medIndivInfo =  MedsRepo(context).doMedIndivLoad()
+        m_apg.m_serverVersion = fetchServerVersion()
+    }
+    fun doAPGDataRead() : m_apg_data {
+        return m_apg
+    }
+
     fun signInAnonymously(onResult: (String) -> Unit) {
         val auth = FirebaseAuth.getInstance()
         val user = auth.currentUser
@@ -86,7 +95,7 @@ object AppGlobal {
     }
     suspend fun fetchServerVersion(): c_ServerVersion? {
         return try {
-            val response = RetrofitClient.instance.getServerVersion()
+            val response = RetrofitClient.api.getServerVersion()
             if (response.isSuccessful) {
                 response.body()
             } else {
@@ -117,9 +126,7 @@ object AppGlobal {
         return ret
     }
 
-    fun doAPGDataRead() : m_apg_data {
-        return m_apg
-    }
+
 
 
     fun getInstance(): FirebaseAnalytics = firebaseAnalytics

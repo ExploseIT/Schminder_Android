@@ -8,7 +8,9 @@ import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 import androidx.room.Relation
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.Date
 
 data class MedIndivDto(
     val medName: String
@@ -48,6 +50,8 @@ data class MedIndiv(
         )
     ]
 )
+
+
 data class Med(
     @PrimaryKey (autoGenerate = true)
     val medId: Int = 0,
@@ -58,7 +62,9 @@ data class Med(
     val medRepeatType: MedRepeatTypeEnum = MedRepeatTypeEnum.Ongoing,
     val medRepeatCount: Int = 0,
     val medRepeatInterval: MedRepeatIntervalEnum = MedRepeatIntervalEnum.Days,
-    val medName: String
+    val medDateStart: LocalDate,
+    val medName: String,
+    val medDTTaken: LocalDateTime? = null
 ) {
     companion object {
         fun createScheduledMed(
@@ -67,7 +73,8 @@ data class Med(
             time: LocalTime,
             repeatType: String,
             repeatCount: Int,
-            repeatInterval: String
+            repeatInterval: String,
+            startDate: LocalDate,
         ): Med {
             return Med(
                 medId = id,
@@ -80,6 +87,7 @@ data class Med(
                 medRepeatInterval = MedRepeatIntervalEnum.valueOf(
                     repeatInterval.replaceFirstChar { it.uppercase() }
                 ),
+                medDateStart = startDate,
                 medScheduled = true
             )
         }

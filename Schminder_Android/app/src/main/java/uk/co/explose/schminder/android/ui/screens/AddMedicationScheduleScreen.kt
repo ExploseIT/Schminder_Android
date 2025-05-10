@@ -48,6 +48,7 @@ import uk.co.explose.schminder.android.model.mpp.MedRepeatIntervalEnum
 import uk.co.explose.schminder.android.model.mpp.MedRepeatTypeEnum
 import uk.co.explose.schminder.android.model.mpp.MedsRepo
 import uk.co.explose.schminder.android.utils.setTime
+import java.time.LocalDate
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -102,7 +103,8 @@ fun AddMedicationScheduleScreen(
                     }
                     IconButton(onClick = {
                         val time = LocalTime.of(timePickerState.hour, timePickerState.minute)
-                        val med = Med.createScheduledMed(medId, medName, time, repeatType.toString(), durationCount.toIntOrNull() ?: 1, durationUnit)
+                        val med = Med.createScheduledMed(medId, medName, time,
+                            repeatType.toString(), durationCount.toIntOrNull() ?: 1, durationUnit, LocalDate.now())
                         onSave(med)
                         navController.popBackStack()
                     }) {
