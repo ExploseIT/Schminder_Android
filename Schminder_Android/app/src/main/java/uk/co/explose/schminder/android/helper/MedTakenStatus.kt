@@ -5,17 +5,19 @@ package uk.co.explose.schminder.android.helper
 import java.time.LocalDateTime
 import uk.co.explose.schminder.android.model.mpp.Med
 import androidx.compose.ui.graphics.Color
-import uk.co.explose.schminder.android.ui.viewmodels.settingsObj
+import uk.co.explose.schminder.android.mapper.MedScheduledDisplayItem
+import uk.co.explose.schminder.android.model.mpp.MedScheduled
+import uk.co.explose.schminder.android.model.settings.SettingsObj
 import java.time.LocalDate
 
 fun getMedStatus(
-    med: Med,
+    med: MedScheduledDisplayItem,
     dtNow: LocalDateTime,
     dayRel: LocalDate,
     dtRel: LocalDateTime,
-    objSettings: settingsObj,
+    objSettings: SettingsObj,
 ): medStatus {
-    val medDateTime = LocalDateTime.of(dayRel, med.medTimeofday)
+    val medDateTime = LocalDateTime.of(dayRel, med.medTodDerived)
 
     return when {
         med.medDTTaken != null -> medStatus.from(MedStatusName.MedSTaken, true)

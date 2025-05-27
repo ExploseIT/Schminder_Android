@@ -43,6 +43,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import uk.co.explose.schminder.android.BuildConfig
 import uk.co.explose.schminder.android.model.mpp.Med
 import uk.co.explose.schminder.android.model.mpp.MedRepeatIntervalEnum
 import uk.co.explose.schminder.android.model.mpp.MedRepeatTypeEnum
@@ -68,8 +69,12 @@ fun AddMedicationScheduleScreen(
     var durationCount by remember { mutableStateOf("1") }
     var durationUnit by remember { mutableStateOf("Days") }
 
-    val repeatTypeOptions = listOf(MedRepeatTypeEnum.Once, MedRepeatTypeEnum.Count, MedRepeatTypeEnum.Ongoing)
-    val durationUnits = listOf(MedRepeatIntervalEnum.Days, MedRepeatIntervalEnum.Weeks, MedRepeatIntervalEnum.Months)
+    val repeatTypeOptions = MedRepeatTypeEnum.entries.sortedBy { it.sortOrder }
+
+    val modeDebug: Boolean = BuildConfig.DEBUG
+
+    val durationUnits = MedRepeatIntervalEnum.entries.sortedBy { it.sortOrder }
+    //listOf(MedRepeatIntervalEnum.Days, MedRepeatIntervalEnum.Weeks, MedRepeatIntervalEnum.Months)
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -131,12 +136,19 @@ fun AddMedicationScheduleScreen(
             Text("Repeat")
             Row {
                 repeatTypeOptions.forEach { option ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(end = 16.dp)
+                    if (modeDebug || option.sortOrder < 100)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(end = 8.dp)
                     ) {
-                        RadioButton(selected = repeatType == option, onClick = { repeatType = option })
-                        Text(option.toString())
+                        RadioButton(
+                            selected = repeatType == option,
+                            onClick = { repeatType = option }
+                        )
+                        Text(
+                            text = option.name, // use label instead of toString() for clean display
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
             }
@@ -160,8 +172,17 @@ fun AddMedicationScheduleScreen(
             ) {
                 durationUnits.forEach { unit ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = durationUnit == unit.toString(), onClick = { durationUnit = unit.toString() })
-                        Text(unit.toString())
+                        if (unit.sortOrder < 100)
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(end = 8.dp)
+                            ) {
+                                RadioButton(
+                                    selected = durationUnit == unit.toString(),
+                                    onClick = { durationUnit = unit.toString() })
+
+                                Text(unit.toString())
+                            }
                     }
                 }
             }

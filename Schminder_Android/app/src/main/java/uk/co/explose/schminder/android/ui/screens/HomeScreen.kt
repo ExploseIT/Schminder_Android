@@ -39,12 +39,11 @@ import androidx.navigation.NavHostController
 import uk.co.explose.schminder.android.core.AppGlobal
 import uk.co.explose.schminder.android.helper.MedCard
 import uk.co.explose.schminder.android.helper.MedCardParms
-import uk.co.explose.schminder.android.helper.getMedListScheduledForToday
-import uk.co.explose.schminder.android.model.mpp.Med
+import uk.co.explose.schminder.android.mapper.MedScheduledDisplayItem
+import uk.co.explose.schminder.android.model.mpp.MedScheduleService
+import uk.co.explose.schminder.android.model.mpp.MedScheduled
 import uk.co.explose.schminder.android.model.mpp.MedsRepo
-import uk.co.explose.schminder.android.model.mpp.MedIndiv
-import uk.co.explose.schminder.android.model.mpp.MedRepeatIntervalEnum
-import uk.co.explose.schminder.android.model.mpp.MedRepeatTypeEnum
+
 import uk.co.explose.schminder.android.ui.components.FabItem
 import uk.co.explose.schminder.android.ui.viewmodels.HomeScreenVM
 import java.time.DayOfWeek
@@ -72,21 +71,25 @@ fun HomeScreen(navController: NavHostController) {
     val isLoading = thisVM.isLoading
     val errorMessage = thisVM.errorMessage
 
-    val medsForToday = getMedListScheduledForToday(scheduledMeds, day)
+    //val medsForToday = getMedListScheduledForToday(scheduledMeds, day)
 
     val today = remember { LocalDate.now() }
     var selectedDay by remember { mutableStateOf(today) }
     var selectedDTNow by remember { mutableStateOf(dtNow)}
 
-    val medsForSelectedDay by remember(scheduledMeds, selectedDay) {
-        derivedStateOf {
-            getMedListScheduledForToday(scheduledMeds, selectedDay)
-        }
+    // State to hold the resolved MedScheduled list
+    var medsForSelectedDay by remember { mutableStateOf<List<MedScheduledDisplayItem>>(emptyList()) }
+
+    // Whenever selectedDay or scheduledMeds change, recalculate
+    LaunchedEffect(selectedDay, scheduledMeds) {
+        val scheduler = MedsRepo(context)
+        medsForSelectedDay = scheduler.getScheduledForDay(scheduledMeds, selectedDay)
     }
-    val SettingsObj = thisVM.SettingsObj
+
+    val settingsObj = thisVM.settingsObj
 
     val startOfWeek = today.with(DayOfWeek.MONDAY)
-    val daysOfWeek = DayOfWeek.values().toList()
+    val daysOfWeek = DayOfWeek.entries
     var fabExpanded by remember { mutableStateOf(false) }
 
     val configuration = LocalConfiguration.current
@@ -271,7 +274,7 @@ fun HomeScreen(navController: NavHostController) {
 
                 else -> {
                     items(medsForSelectedDay, key = { it.medId }) { med ->
-                        MedCard(MedCardParms(med, LocalDateTime.now(), selectedDay, selectedDTNow, SettingsObj))
+                        MedCard(MedCardParms(med, LocalDateTime.now(), selectedDay, selectedDTNow, settingsObj))
                     }
                 }
             }

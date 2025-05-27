@@ -34,8 +34,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import uk.co.explose.schminder.android.BuildConfig
 import uk.co.explose.schminder.android.model.mpp.MedIndivMed
 import uk.co.explose.schminder.android.model.mpp.MedRepeatTypeEnum
+import java.time.LocalDate
+import java.time.LocalTime
 
 @Composable
 fun MedsScheduledTable(navController: NavHostController, medGroups: List<MedIndivMed>) {
@@ -45,6 +48,7 @@ fun MedsScheduledTable(navController: NavHostController, medGroups: List<MedIndi
     val durWeight = 0.15f
     val actionWeight = 0.1f
 
+    val modeDebug: Boolean = BuildConfig.DEBUG
 
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
 
@@ -76,25 +80,32 @@ fun MedsScheduledTable(navController: NavHostController, medGroups: List<MedIndi
 
         // All group rows
         medGroups.forEach { group ->
-            group.schedules.forEach { med ->
-                var sDuration = ""
-                if (med.medRepeatType == MedRepeatTypeEnum.Ongoing) {
-                    sDuration = " • ${med.medRepeatType}"
-                } else if (med.medRepeatType == MedRepeatTypeEnum.Once) {
-                    sDuration = " • ${med.medRepeatType}"
-                } else if (med.medRepeatType == MedRepeatTypeEnum.Count) {
-                    sDuration = "${med.medRepeatCount} ${med.medRepeatInterval.name.uppercase()} • ${med.medRepeatType}"
-                }
-
-                MedicationScheduleItem(
-                    name = med.medName,
-                    notes = "Tap for details", // or med.note if available
-                    time = med.medTimeofday.toString(),
-                    duration = sDuration,
-                    onClick = {
-                        navController.navigate("medDetail/${med.medName}?medId=${med.medId}")
+            group.schedules
+                .sortedBy { it.getTod() }
+                .forEach { med ->
+                if (modeDebug || med.medRepeatType.sortOrder < 100) {
+                    var sDuration = ""
+                    if (med.medRepeatType == MedRepeatTypeEnum.Ongoing) {
+                        sDuration = " • ${med.medRepeatType}"
+                    } else if (med.medRepeatType == MedRepeatTypeEnum.Once) {
+                        sDuration = " • ${med.medRepeatType}"
+                    } else if (med.medRepeatType == MedRepeatTypeEnum.Count) {
+                        sDuration =
+                            "${med.medRepeatCount} ${med.medRepeatInterval.name.uppercase()} • ${med.medRepeatType}"
+                    } else if (med.medRepeatType == MedRepeatTypeEnum.Now) {
+                        sDuration = " • ${med.medRepeatType}"
                     }
-                )
+
+                    MedicationScheduleItem(
+                        name = med.medName,
+                        notes = "Tap for details", // or med.note if available
+                        time = med.getTod().toString(),
+                        duration = sDuration,
+                        onClick = {
+                            navController.navigate("medDetail/${med.medName}?medId=${med.medId}")
+                        }
+                    )
+                }
             }
         }
     }

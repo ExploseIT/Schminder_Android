@@ -8,19 +8,24 @@ import kotlinx.coroutines.launch
 import uk.co.explose.schminder.android.model.mpp.Med
 import android.content.Context
 import androidx.compose.runtime.*
+import uk.co.explose.schminder.android.core.AppDb
 import uk.co.explose.schminder.android.model.mpp.MedIndiv
 import uk.co.explose.schminder.android.model.mpp.MedsRepo
+import uk.co.explose.schminder.android.model.settings.SettingsObj
+import uk.co.explose.schminder.android.model.settings.SettingsRepo
 
 class HomeScreenVM(context: Context) : ViewModel() {
 
     private val medsRepo = MedsRepo(context)
+
+    private val settingsRepo = SettingsRepo(context)
 
     var parsedMeds by mutableStateOf<List<MedIndiv>>(emptyList())
         private set
     var scheduledMeds by mutableStateOf<List<Med>>(emptyList())
         private set
 
-    var SettingsObj by mutableStateOf<settingsObj>(settingsObj())
+    var settingsObj by mutableStateOf<SettingsObj>(SettingsObj())
         private set
 
     var isLoading by mutableStateOf(true)
@@ -37,11 +42,11 @@ class HomeScreenVM(context: Context) : ViewModel() {
                 parsedMeds = medsRepo.medIndivListAll()
 
 
-                val lSettings = medsRepo.loadSettings()
-                if (lSettings.count() >= 3) {
-                    SettingsObj.soonMinutes = lSettings["setSoonMinutes"]!!.toLong()
-                    SettingsObj.missedMinutes = lSettings["setMissedMinutes"]!!.toLong()
-                    SettingsObj.windowMinutes = lSettings["setWindowMinutes"]!!.toLong()
+                val lSettings = settingsRepo.loadSettings()
+                if (lSettings.size >= 3) {
+                    settingsObj.soonMinutes = lSettings.first { it.setKey == "setSoonMinutes" }.setValue.toLong()
+                    settingsObj.missedMinutes = lSettings.first { it.setKey == "setMissedMinutes" }.setValue.toLong()
+                    settingsObj.windowMinutes = lSettings.first { it.setKey == "setWindowMinutes" }.setValue.toLong()
                 }
 
                 errorMessage = null

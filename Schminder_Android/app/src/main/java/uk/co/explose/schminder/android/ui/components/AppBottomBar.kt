@@ -34,26 +34,26 @@ fun AppBottomBar(currentRoute: String, navController: NavHostController) {
             label = { Text("Plan") }
         )
         NavigationBarItem(
-            selected = currentRoute == "medications",
+            selected = currentRoute == "schedule",
             onClick = {
-                if (currentRoute != "medications") navController.navigate("medications") {
-                    popUpTo("medications") { inclusive = true }
+                if (currentRoute != "schedule") navController.navigate("schedule") {
+                    popUpTo("schedule") { inclusive = true }
                     launchSingleTop = true
                 }
             },
-            icon = { Icon(Icons.Default.Medication, contentDescription = "Medications") },
-            label = { Text("Medications") }
+            icon = { Icon(Icons.Default.Schedule, contentDescription = "Schedule") },
+            label = { Text("Schedule") }
         )
         NavigationBarItem(
-            selected = currentRoute == "mockup" || currentRoute == "manage",
+            selected = currentRoute == "settings",
             onClick = {
-                if (currentRoute != "mockup") navController.navigate("mockup") {
-                    popUpTo("mockup") { inclusive = true }
+                if (currentRoute != "settings") navController.navigate("settings") {
+                    popUpTo("settings") { inclusive = true }
                     launchSingleTop = true
                 }
             },
-            icon = { Icon(Icons.Default.Menu, contentDescription = "Manage") },
-            label = { Text("Manage") }
+            icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
+            label = { Text("Settings") }
         )
     }
 }

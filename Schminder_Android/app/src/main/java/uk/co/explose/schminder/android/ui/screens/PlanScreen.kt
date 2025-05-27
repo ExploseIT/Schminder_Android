@@ -3,12 +3,16 @@ package uk.co.explose.schminder.android.ui.screens
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.RestoreFromTrash
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import uk.co.explose.schminder.android.core.AppGlobal
+import uk.co.explose.schminder.android.ui.components.ManageItem
 import uk.co.explose.schminder.android.ui.components.SchminderTopBar
 
 data class RefillItem(
@@ -34,7 +38,8 @@ fun PlanScreen(navController: NavHostController) {
     Scaffold(
     ) { innerPadding ->
         LazyColumn(modifier = Modifier.padding(innerPadding)) {
-
+            item { ManageItem(icon = Icons.Filled.Person, label = "Doctors") { /* nav */ } }
+            item { ManageItem(icon = Icons.Filled.RestoreFromTrash, label = "Refills") { /* nav */ } }
             items(refillList) { refill ->
                 RefillCard(
                     title = refill.title,

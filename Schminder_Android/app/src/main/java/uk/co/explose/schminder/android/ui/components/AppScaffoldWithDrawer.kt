@@ -1,9 +1,10 @@
 
 
-package uk.co.explose.schminder.android.app
+package uk.co.explose.schminder.android.ui.components
 
 import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -24,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -34,24 +36,26 @@ import uk.co.explose.schminder.android.ui.components.AppBottomBar
 import uk.co.explose.schminder.android.ui.components.SchminderTopBar
 import uk.co.explose.schminder.android.ui.screens.AddMedScreen
 import uk.co.explose.schminder.android.ui.screens.AddMedicationScheduleScreen
+import uk.co.explose.schminder.android.ui.screens.AppInfoScreen
 import uk.co.explose.schminder.android.ui.screens.HomeScreen
-import uk.co.explose.schminder.android.ui.screens.ManageScreen
-import uk.co.explose.schminder.android.ui.screens.MedicationsScreen
+import uk.co.explose.schminder.android.ui.screens.ScheduleScreen
 import uk.co.explose.schminder.android.ui.screens.PlanScreen
 import uk.co.explose.schminder.android.ui.screens.PrescriptionScanScreen
 import uk.co.explose.schminder.android.ui.screens.ProfileDrawer
+import uk.co.explose.schminder.android.ui.screens.ScheduleSettingsScreen
 import uk.co.explose.schminder.android.ui.screens.SettingsScreen
 
 @OptIn(ExperimentalGetImage::class)
 @Composable
-fun AppScaffoldWithDrawer() {
-    val navController = rememberNavController()
+fun AppScaffoldWithDrawer(
+    navController: NavHostController,
+    content: @Composable (PaddingValues) -> Unit
+) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: "home"
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    // Dummy auth mode for now, replace with Firebase logic
     val authMode = remember { mutableStateOf("Guest") }
 
     ModalNavigationDrawer(
@@ -78,50 +82,19 @@ fun AppScaffoldWithDrawer() {
             topBar = {
                 SchminderTopBar(
                     userName = authMode.value,
-                    showBackButton = currentRoute != "home" && currentRoute != "plan" && currentRoute != "medications" && currentRoute != "mockup",
+                    showBackButton = currentRoute !in listOf("home", "plan", "medications", "mockup"),
                     onBackClick = { navController.popBackStack() },
-                    onNotificationClick = {
-                        //navController.navigate("notifications")
-                    },
+                    onNotificationClick = { /* TODO */ },
                     onProfileClick = {
-                        scope.launch { drawerState.open() } // 👈 open drawer
+                        scope.launch { drawerState.open() }
                     }
                 )
             },
             bottomBar = {
-                AppBottomBar(currentRoute = currentRoute, navController)
+                AppBottomBar(currentRoute = currentRoute, navController = navController)
             }
         ) { innerPadding ->
-            NavHost(
-                navController = navController,
-                startDestination = "home",
-                modifier = Modifier.padding(innerPadding)
-            ) {
-                composable("home") { HomeScreen(navController) }
-                composable("settings") { SettingsScreen(navController) }
-                composable("add_med") { AddMedScreen(navController) }
-                composable("plan") { PlanScreen(navController) }
-                composable("medications") { MedicationsScreen(navController) }
-                composable("mockup") { ManageScreen(navController) }
-                composable("prescription_scan") { PrescriptionScanScreen(navController) }
-                composable("medDetail/{medName}?medId={medId}") { backStackEntry ->
-                    val context = LocalContext.current
-                    val medName = backStackEntry.arguments?.getString("medName") ?: "Unknown"
-                    val medId = backStackEntry.arguments?.getString("medId")?.toIntOrNull() ?: 0
-
-                    AddMedicationScheduleScreen(
-                        navController = navController,
-                        medName = medName,
-                        medId = medId,
-                        onSave = { cMed ->
-                            scope.launch { MedsRepo(context).medInsert(cMed) }
-                        },
-                        onDelete = { id ->
-                            scope.launch { navController.popBackStack() }
-                        }
-                    )
-                }
-            }
+            content(innerPadding) // Pass padding to actual screen content
         }
     }
 }

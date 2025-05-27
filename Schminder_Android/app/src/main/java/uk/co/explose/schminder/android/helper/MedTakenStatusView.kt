@@ -21,8 +21,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import uk.co.explose.schminder.android.mapper.MedScheduledDisplayItem
 import uk.co.explose.schminder.android.model.mpp.Med
-import uk.co.explose.schminder.android.ui.viewmodels.settingsObj
+import uk.co.explose.schminder.android.model.mpp.MedRepeatIntervalEnum
+import uk.co.explose.schminder.android.model.mpp.MedRepeatTypeEnum
+import uk.co.explose.schminder.android.model.mpp.MedScheduled
+import uk.co.explose.schminder.android.model.settings.SettingsObj
 
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -33,6 +37,16 @@ fun MedCard(mp: MedCardParms) {
     val scale = remember { Animatable(1f) }
     val med = mp.med
 
+    var sRepeatInfo = ""
+    if (med.medRepeatType == MedRepeatTypeEnum.Now) {
+        sRepeatInfo = "Repeat: ${med.medRepeatType} "
+    }
+    else if (med.medRepeatCount > 1) {
+        sRepeatInfo = "Repeat: ${med.medRepeatType} every ${med.medRepeatCount} ${med.medRepeatInterval.name.lowercase()}"
+    }
+    else {
+        sRepeatInfo = "Repeat: ${med.medRepeatType} every ${MedRepeatIntervalEnum.Day.name.lowercase()}"
+    }
     LaunchedEffect(Unit) {
         while (true) {
             scale.animateTo(1.2f, animationSpec = tween(300))
@@ -59,9 +73,9 @@ fun MedCard(mp: MedCardParms) {
                 .weight(1f)
             ) {
                 Text(text = med.medName, style = MaterialTheme.typography.titleMedium)
-                Text(text = "Time: ${med.medTimeofday}", style = MaterialTheme.typography.bodySmall)
+                Text(text = "Time: ${med.medTodDerived}", style = MaterialTheme.typography.bodySmall)
                 Text(
-                    text = "Repeat: ${med.medRepeatType} every ${med.medRepeatCount} ${med.medRepeatInterval.name.lowercase()}",
+                    text = sRepeatInfo,
                     style = MaterialTheme.typography.bodySmall
                 )
                 Row(
@@ -107,9 +121,9 @@ fun MedCard(mp: MedCardParms) {
 }
 
 data class MedCardParms (
-    var med: Med,
+    var med: MedScheduledDisplayItem,
     var dtNow: LocalDateTime,
     var dayRel: LocalDate,
     var dtRel: LocalDateTime,
-    var objSettings: settingsObj
+    var objSettings: SettingsObj
 )

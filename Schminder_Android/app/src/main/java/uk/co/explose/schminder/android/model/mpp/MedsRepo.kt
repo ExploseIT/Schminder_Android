@@ -17,6 +17,10 @@ import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import uk.co.explose.schminder.android.core.AppDb
+import uk.co.explose.schminder.android.core.insertAndReturn
+import uk.co.explose.schminder.android.mapper.MedScheduledDisplayItem
+import uk.co.explose.schminder.android.model.settings.AppSetting
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -26,9 +30,31 @@ import kotlin.toString
 
 class MedsRepo(private val context: Context) {
 
+    private val db = AppDb.getInstance(context)
+    private val daoScheduled = db.medsScheduledDao()
+    private val daoMed = db.medsDao()
+
     fun addMedsNew() {
 
     }
+
+    suspend fun readMedScheduledDisplayItemById(medId: Int): MedScheduledDisplayItem? {
+        val scheduled = daoScheduled.readById(medId) ?: return null
+        val med = daoMed.getMedById(scheduled.medIdSchedule) ?: return null
+        return scheduled.toMedScheduledDisplayItem(med)
+    }
+
+    suspend fun readMedScheduledDisplayItemNextByDT(after: LocalDateTime, skipMedId: Int): MedScheduledDisplayItem? {
+        val nextScheduled = AppDb.getInstance(context).medsScheduledDao()
+            .getNextScheduledAfterExcluding(after, skipMedId)
+        val nextMed = nextScheduled?.let {
+            AppDb.getInstance(context).medsDao().getMedById(it.medIdSchedule)
+        }
+        return if (nextScheduled != null && nextMed != null)
+            nextScheduled.toMedScheduledDisplayItem(nextMed)
+        else null
+    }
+
 
     suspend fun doMedIndivLoad(): MedIndivInfo? {
         return try {
@@ -43,6 +69,7 @@ class MedsRepo(private val context: Context) {
             null
         }
     }
+
     suspend fun doMedIndivActionTx(medIndivInfo: MedIndivActionTx): MedIndivActionRx? {
         return try {
             val response = RetrofitClient.api.doMedIndivActionTx(medIndivInfo)
@@ -72,18 +99,6 @@ class MedsRepo(private val context: Context) {
     }
 
 
-    private val daoMedsIndiv: MedsIndivDao by lazy {
-        RoomInstance.getDatabase(context).medsIndivDao()
-    }
-
-    private val daoMeds: MedsDao by lazy {
-        RoomInstance.getDatabase(context).medsDao()
-    }
-
-    private val daoSettings: SettingsDao by lazy {
-        RoomInstance.getDatabase(context).settingsDao()
-    }
-
     suspend fun convertIndivToMeds(medsIndiv: List<MedIndiv>): List<Med> {
         return medsIndiv.map { indiv ->
             Med(
@@ -101,194 +116,194 @@ class MedsRepo(private val context: Context) {
         return medsIndiv.map { indiv ->
             MedIndiv(
                 medName = indiv.medName,
-                medDateEntered = LocalDate.now()
+                medDTEntered = LocalDateTime.now()
             )
         }
     }
 
+    private suspend fun loadMedsScheduled(context: Context): List<MedScheduledWithMed> {
+        return AppDb.getInstance(context).medsScheduledDao().listAll()
+    }
+
+    suspend fun insertMedIntoMedScheduled(context: Context, med: Med, today: LocalDate, bInsert: Boolean) : MedScheduled {
+        val dao = AppDb.getInstance(context).medsScheduledDao()
+        var newEntry = MedScheduled(
+            medPid = med.medPid,
+            medIdSchedule = med.medId,
+            medName = med.medName,
+            medInfo = med.medInfo,
+            medDTSchedule = today.atTime(med.medTimeofday),
+            medDTTaken = null,
+            medDTNotifyLast = null
+        )
+        if (bInsert) {
+            newEntry = insertAndReturn(dao::insert, newEntry)
+        }
+        return newEntry
+    }
+
+    suspend fun loadMedsAndSchedule(lMeds: List<Med>, today: LocalDate, bInsert: Boolean) : List<MedScheduled> {
+        var ret = mutableListOf<MedScheduled>()
+        lMeds.forEach { med ->
+            var medScheduled = AppDb.getInstance(context).medsScheduledDao().exists(med.medId, today.atTime(med.medTimeofday))
+            if (medScheduled == null) {
+                medScheduled = insertMedIntoMedScheduled(context, med, today, bInsert)
+            }
+            ret.add(medScheduled)
+        }
+        return ret
+    }
+
+    suspend fun loadMedsSchedule(): List<Med> {
+        return AppDb.getInstance(context).medsDao().medListAll()
+    }
+
+    suspend fun saveMedLastNotified(med: MedScheduledDisplayItem) {
+        if (med.medId > 0) {
+            AppDb.getInstance(context).medsScheduledDao()
+                .updateNotifyLastById(med.medId, med.medDTNotifyLast!!)
+        }
+    }
+
+    suspend fun readMedById(medId: Int) {
+        if (medId > 0) {
+            AppDb.getInstance(context).medsScheduledDao()
+                .readById(medId)
+        }
+    }
+
     suspend fun medIndivMedListAll(): List<MedIndivMed> {
-        return daoMedsIndiv.MedIndivMedListAll()
+        return AppDb.getInstance(context).medsIndivDao().MedIndivMedListAll()
     }
 
     suspend fun medIndivListAll(): List<MedIndiv> {
-        return daoMedsIndiv.medIndivList()
+        return AppDb.getInstance(context).medsIndivDao().medIndivList()
     }
 
     suspend fun medIndivDtoListAll(): List<MedIndivDto> {
-        return daoMedsIndiv.medIndivList()
+        return AppDb.getInstance(context).medsIndivDao().medIndivList()
             .map { MedIndivDto(medName = it.medName) }
     }
 
-    suspend fun medIndivDtoInsertAll(medsIndiv: List<MedIndivDto>) : List<Long> {
+    suspend fun medIndivDtoInsertAll(medsIndiv: List<MedIndivDto>): List<Long> {
         val meds = convertIndivDtoToIndiv(medsIndiv)
-        return daoMedsIndiv.medIndivInsertAll(meds)
+        return AppDb.getInstance(context).medsIndivDao().medIndivInsertAll(meds)
     }
 
-    suspend fun medIndivInsertAll(meds: List<MedIndiv>) : List<Long> {
-        return daoMedsIndiv.medIndivInsertAll(meds)
+    suspend fun medIndivInsertAll(meds: List<MedIndiv>): List<Long> {
+        return AppDb.getInstance(context).medsIndivDao().medIndivInsertAll(meds)
     }
 
-    suspend fun medIndivDeleteByName(medName: String)  {
-        return daoMedsIndiv.medDeleteByName(medName)
+    suspend fun medIndivDeleteByName(medName: String) {
+        return AppDb.getInstance(context).medsIndivDao().medDeleteByName(medName)
     }
 
-    suspend fun medListAll() : List<Med> {
-        return daoMeds.medListAll()
+    suspend fun medListAll(): List<Med> {
+        return AppDb.getInstance(context).medsDao().medListAll()
     }
 
-    suspend fun medInsert(med: Med) : Long {
-        return daoMeds.medInsert(med)
+    suspend fun medInsert(med: Med): Long {
+        return AppDb.getInstance(context).medsDao().medInsert(med)
     }
 
     suspend fun medReadById(id: Int): Med? {
-        return daoMeds.getMedById(id)
+        return AppDb.getInstance(context).medsDao().getMedById(id)
     }
 
 
-    suspend fun insertSettings(key: String,value: String) {
-        daoSettings.insert(ScheduleSetting(key, value))
-    }
+    suspend fun getScheduledForDay(meds: List<Med>, day: LocalDate): List<MedScheduledDisplayItem> {
+        val dao = AppDb.getInstance(context).medsScheduledDao()
+        val today = LocalDate.now()
+        val result = mutableListOf<MedScheduledDisplayItem>()
 
-    suspend fun loadSettings(): Map<String,String?> {
-        val list = daoSettings.getAll()
-        val settings = list.associate { it.setKey to it.setValue }
-        return settings
-    }
+        for (med in meds.sortedBy { it.getTod() }) {
+            val dt = day.atTime(med.medTimeofday)
 
+            if ((day <= today && med.medRepeatType != MedRepeatTypeEnum.Now)
+                || (day == today && med.medRepeatType == MedRepeatTypeEnum.Now)) {
 
-
-    object RoomInstance {
-        @Volatile private var INSTANCE: AppDatabase? = null
-        val MIGRATION_16_17 = object : Migration(16, 17) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL(
-                    """
-            CREATE TABLE IF NOT EXISTS settingsTbl (
-        setKey TEXT NOT NULL PRIMARY KEY,
-        setValue TEXT NOT NULL
-    )
-            """.trimIndent()
-                )
+                var scheduled = dao.exists(med.medId, dt)
+                if (scheduled == null) {
+                    scheduled = dao.insertAndReturn(
+                        MedScheduled(
+                            medPid = med.medPid,
+                            medIdSchedule = med.medId,
+                            medName = med.medName,
+                            medInfo = med.medInfo,
+                            medDTSchedule = dt
+                        )
+                    )
+                }
+                result.add(createDisplayItemFrom(med, scheduled, dt))
+            } else {
+                result.add(createDisplayItemFrom(med, null, dt))
             }
         }
 
-        fun getDatabase(context: Context): AppDatabase {
-            return INSTANCE ?: synchronized(this) {
-                Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "schminder_db"
+        return result
+    }
+
+    suspend fun getNextMedScheduledDisplayItemFrom(
+        allMeds: List<Med>,
+        currentMed: MedScheduledDisplayItem,
+        day: LocalDate
+    ): MedScheduledDisplayItem? {
+        val dao = AppDb.getInstance(context).medsScheduledDao()
+
+        val sortedMeds = allMeds.sortedBy { it.medTimeofday }
+
+        val nextToday = sortedMeds.firstOrNull { it.medTimeofday > currentMed.medTimeOfDay }
+        val nextMed = nextToday ?: sortedMeds.firstOrNull() ?: return null
+        val targetDay = if (nextToday != null) day else day.plusDays(1)
+
+        val dt = targetDay.atTime(nextMed.medTimeofday)
+
+        var scheduled = dao.exists(nextMed.medId, dt)
+        if (scheduled == null) {
+            scheduled = dao.insertAndReturn(
+                MedScheduled(
+                    medPid = nextMed.medPid,
+                    medIdSchedule = nextMed.medId,
+                    medName = nextMed.medName,
+                    medInfo = nextMed.medInfo,
+                    medDTSchedule = dt
                 )
-                    .fallbackToDestructiveMigration(true)
-                    //.addMigrations(MIGRATION_16_17)
-                    .build().also { INSTANCE = it }
-            }
+            )
         }
-    }
-}
 
-// 1. Define the Room Entity
-@Entity(tableName = "settingsTbl")
-data class ScheduleSetting(
-    @PrimaryKey val setKey: String,
-    val setValue: String
-)
-
-@Dao
-interface SettingsDao {
-    @Query("SELECT * FROM settingsTbl")
-    suspend fun getAll(): List<ScheduleSetting>
-
-    @Query("SELECT setValue FROM settingsTbl WHERE setKey = :key")
-    suspend fun getValue(key: String): String
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(setting: ScheduleSetting)
-}
-
-
-@Dao
-interface MedsIndivDao {
-    @Query("SELECT * FROM MedsIndivTbl")
-    suspend fun medIndivList(): List<MedIndiv>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun medIndivInsertAll(meds: List<MedIndiv>): List<Long>
-
-    @Query("DELETE FROM MedsIndivTbl WHERE medName = :medName")
-    suspend fun medDeleteByName(medName: String)
-
-    @Transaction
-    @Query("SELECT * FROM MedsIndivTbl")
-    suspend fun MedIndivMedListAll(): List<MedIndivMed>
-}
-
-@Dao
-interface MedsDao {
-    @Query("SELECT * FROM MedsTbl")
-    suspend fun medListAll(): List<Med>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun medInsert(med: Med): Long
-
-    @Query("DELETE FROM MedsTbl WHERE medId = :medId")
-    suspend fun medDeleteById(medId: Int)
-
-    @Query("SELECT * FROM MedsTbl WHERE medId = :id LIMIT 1")
-    suspend fun getMedById(id: Int): Med?
-}
-
-
-@Database(
-    entities = [
-        Med::class,
-        MedIndiv::class,
-        ScheduleSetting::class
-    ],
-    version = 18
-)
-
-@TypeConverters(Converters::class)
-abstract class AppDatabase : RoomDatabase() {
-    abstract fun medsIndivDao(): MedsIndivDao
-    abstract fun medsDao(): MedsDao
-    abstract fun settingsDao(): SettingsDao
-}
-
-
-class Converters {
-    @TypeConverter
-    fun fromLocalTime(time: LocalTime): String = time.toString()
-
-    @TypeConverter
-    fun toLocalTime(value: String): LocalTime = LocalTime.parse(value)
-
-    @TypeConverter
-    fun fromLocalDate(date: LocalDate): String = date.toString()
-
-    @TypeConverter
-    fun toLocalDate(value: String): LocalDate = LocalDate.parse(value)
-
-    @TypeConverter
-    fun fromMedRecurIntervalEnum(value: MedRepeatIntervalEnum): String = value.name
-
-    @TypeConverter
-    fun toMedRepeatIntervalEnum(value: String): MedRepeatIntervalEnum = MedRepeatIntervalEnum.valueOf(value)
-
-    @TypeConverter
-    fun fromMedRepeatTypeEnum(value: MedRepeatTypeEnum): String = value.name
-
-    @TypeConverter
-    fun toMedRecurTypeEnum(value: String): MedRepeatTypeEnum = MedRepeatTypeEnum.valueOf(value)
-
-    @TypeConverter
-    fun fromLocalDateTime(dateTime: LocalDateTime?): String? {
-        return dateTime?.toString()
+        return createDisplayItemFrom(nextMed, scheduled, dt)
     }
 
-    @TypeConverter
-    fun toLocalDateTime(value: String?): LocalDateTime? {
-        return value?.let { LocalDateTime.parse(it) }
-    }
-}
+    private fun createDisplayItemFrom(
+        med: Med,
+        scheduled: MedScheduled?,
+        dt: LocalDateTime
+    ): MedScheduledDisplayItem {
+        val derivedTod = if (med.medRepeatType == MedRepeatTypeEnum.Now)
+            LocalTime.now().withSecond(0).withNano(0)
+        else
+            med.medTimeofday
 
+        val derivedDT = if (med.medRepeatType == MedRepeatTypeEnum.Now)
+            LocalDateTime.now().withSecond(0).withNano(0)
+        else
+            dt
+
+        return MedScheduledDisplayItem(
+            medId = scheduled?.medId ?: 0,
+            medPid = med.medPid,
+            medName = scheduled?.medName ?: med.medName,
+            medInfo = scheduled?.medInfo ?: med.medInfo,
+            medDTSchedule = scheduled?.medDTSchedule ?: dt,
+            medDTTaken = scheduled?.medDTTaken,
+            medRepeatType = med.medRepeatType,
+            medRepeatCount = med.medRepeatCount,
+            medRepeatInterval = med.medRepeatInterval,
+            medTimeOfDay = med.medTimeofday,
+            medDTNotifyLast = scheduled?.medDTNotifyLast,
+            medDTDerived = derivedDT,
+            medTodDerived = derivedTod
+        )
+    }
+
+}
