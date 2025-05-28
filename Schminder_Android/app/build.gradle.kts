@@ -93,7 +93,7 @@ dependencies {
     // 🧱 Jetpack Compose core libraries
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.ui)
-    implementation(libs.androidx.material3) // Optional: material2 is also okay
+    //implementation(libs.androidx.material3) // Optional: material2 is also okay
     implementation(libs.androidx.ui.tooling.preview)
     debugImplementation(libs.androidx.ui.tooling)
 
@@ -102,6 +102,10 @@ dependencies {
     implementation(libs.androidx.material3.window.size.class1)
     implementation(libs.androidx.material3.adaptive.navigation.suite)
     // implementation(libs.androidx.material3.adaptive.navigation)
+
+    implementation("androidx.compose.material3:material3:1.3.2")
+
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.33.2-alpha")
 
     // 🔁 Navigation for Compose
     implementation(libs.androidx.navigation.compose)

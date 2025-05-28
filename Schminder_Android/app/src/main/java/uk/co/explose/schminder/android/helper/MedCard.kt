@@ -2,6 +2,7 @@
 package uk.co.explose.schminder.android.helper
 
 
+import android.content.Context
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -20,23 +21,30 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import uk.co.explose.schminder.android.core.AppDb
+import uk.co.explose.schminder.android.core.AppToast
 import uk.co.explose.schminder.android.mapper.MedScheduledDisplayItem
-import uk.co.explose.schminder.android.model.mpp.Med
 import uk.co.explose.schminder.android.model.mpp.MedRepeatIntervalEnum
 import uk.co.explose.schminder.android.model.mpp.MedRepeatTypeEnum
-import uk.co.explose.schminder.android.model.mpp.MedScheduled
+import uk.co.explose.schminder.android.model.mpp.MedsRepo
 import uk.co.explose.schminder.android.model.settings.SettingsObj
 
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @Composable
-fun MedCard(mp: MedCardParms) {
+fun MedCard(mp: MedCardParms, context: Context) {
     val status = getMedStatus(mp.med, mp.dtNow, mp.dayRel, mp.dtRel, mp.objSettings)
     val scale = remember { Animatable(1f) }
     val med = mp.med
 
+    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     var sRepeatInfo = ""
     if (med.medRepeatType == MedRepeatTypeEnum.Now) {
         sRepeatInfo = "Repeat: ${med.medRepeatType} "
@@ -74,6 +82,9 @@ fun MedCard(mp: MedCardParms) {
             ) {
                 Text(text = med.medName, style = MaterialTheme.typography.titleMedium)
                 Text(text = "Time: ${med.medTodDerived}", style = MaterialTheme.typography.bodySmall)
+                if (med.medDTTaken != null) {
+                    Text(text = "Time taken: ${med.medDTTaken.format(timeFormatter)}")
+                }
                 Text(
                     text = sRepeatInfo,
                     style = MaterialTheme.typography.bodySmall
@@ -90,7 +101,20 @@ fun MedCard(mp: MedCardParms) {
                     Spacer(modifier = Modifier.width(12.dp))
                     if (status.medsStatus == MedStatusName.MedSTakeNow) {
                         IconButton(
-                            onClick = { /* mark as taken */ },
+                            onClick = {
+                                val now = LocalDateTime.now()
+                                val item = status.medsItem
+                            /* mark as taken */
+                                AppToast(context).showToast("Take medication $status.medsTaken.toString()")
+                                // Set the time taken
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    MedsRepo(context).markMedicationAsTaken(item.medId)
+
+                                    withContext(Dispatchers.Main) {
+                                        mp.onMedTaken();
+                                    }
+                                }
+                            },
                             modifier = Modifier
                                 .size(28.dp)
                                 .background(Color(0xFFBBDEFB), shape = CircleShape) // light blue bg
@@ -107,7 +131,8 @@ fun MedCard(mp: MedCardParms) {
             }
 
             if (status.medsTaken) {
-                IconButton(onClick = { /* mark as taken */ }) {
+                IconButton(onClick = {
+                }) {
                     Icon(
                         imageVector = Icons.Filled.CheckCircle, // or Icons.Filled.Medication
                         contentDescription = "Mark as taken",
@@ -125,5 +150,6 @@ data class MedCardParms (
     var dtNow: LocalDateTime,
     var dayRel: LocalDate,
     var dtRel: LocalDateTime,
-    var objSettings: SettingsObj
+    var objSettings: SettingsObj,
+    var onMedTaken: () -> Unit
 )

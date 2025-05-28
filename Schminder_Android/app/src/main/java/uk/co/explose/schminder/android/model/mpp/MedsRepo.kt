@@ -243,6 +243,12 @@ class MedsRepo(private val context: Context) {
         return result
     }
 
+    suspend fun markMedicationAsTaken(medId: Int) {
+        val dao = AppDb.getInstance(context).medsScheduledDao()
+        val now = LocalDateTime.now().withSecond(0).withNano(0)
+        dao.updateDTTakenById(medId, now)
+    }
+
     suspend fun getNextMedScheduledDisplayItemFrom(
         allMeds: List<Med>,
         currentMed: MedScheduledDisplayItem,

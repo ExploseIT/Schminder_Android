@@ -36,11 +36,13 @@ class MedCheckReceiver : BroadcastReceiver() {
             var shouldNotify = false
             medsScheduled.forEach { med ->
                 if (!shouldNotify) {
-                    if (settingsObj!!.isWithinWindow(med.medDTDerived, now)) {
-                        val last = med.medDTNotifyLast
-                        shouldNotify =
-                            last == null || modeDebug == true || Duration.between(last, now)
-                                .toMinutes() >= setNotificationWindowMinutes
+                    if (med.medDTTaken == null) {
+                        if (settingsObj!!.isWithinWindow(med.medDTDerived, now)) {
+                            val last = med.medDTNotifyLast
+                            shouldNotify =
+                                last == null || modeDebug == true || Duration.between(last, now)
+                                    .toMinutes() >= setNotificationWindowMinutes
+                        }
                     }
                 }
                 if (shouldNotify) {

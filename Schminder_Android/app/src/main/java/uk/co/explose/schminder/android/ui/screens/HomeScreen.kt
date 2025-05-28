@@ -34,24 +34,34 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import uk.co.explose.schminder.android.core.AppGlobal
 import uk.co.explose.schminder.android.helper.MedCard
 import uk.co.explose.schminder.android.helper.MedCardParms
 import uk.co.explose.schminder.android.mapper.MedScheduledDisplayItem
-import uk.co.explose.schminder.android.model.mpp.MedScheduleService
-import uk.co.explose.schminder.android.model.mpp.MedScheduled
 import uk.co.explose.schminder.android.model.mpp.MedsRepo
 
 import uk.co.explose.schminder.android.ui.components.FabItem
 import uk.co.explose.schminder.android.ui.viewmodels.HomeScreenVM
+
+
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.YearMonth
-import java.time.temporal.ChronoUnit
+import java.time.format.DateTimeFormatter
+
 import java.util.Locale
 
 
@@ -75,7 +85,7 @@ fun HomeScreen(navController: NavHostController) {
 
     val today = remember { LocalDate.now() }
     var selectedDay by remember { mutableStateOf(today) }
-    var selectedDTNow by remember { mutableStateOf(dtNow)}
+    var selectedDTNow by remember { mutableStateOf(dtNow) }
 
     // State to hold the resolved MedScheduled list
     var medsForSelectedDay by remember { mutableStateOf<List<MedScheduledDisplayItem>>(emptyList()) }
@@ -156,131 +166,167 @@ fun HomeScreen(navController: NavHostController) {
         }
     ) { paddingValues ->
 
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-        ) {
+        val isRefreshing = remember { mutableStateOf(false) }
 
-            // Row 1: Day names
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    daysOfWeek.forEach { day ->
-                        Text(
-                            text = day.getDisplayName(
-                                java.time.format.TextStyle.SHORT,
-                                Locale.getDefault()
-                            ),
-                            modifier = Modifier.weight(1f),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
+        SwipeRefresh(
+            state = rememberSwipeRefreshState(isRefreshing.value),
+            onRefresh = {
+                isRefreshing.value = true
+                CoroutineScope(Dispatchers.IO).launch {
+                    thisVM.loadVM()
+                    val scheduler = MedsRepo(context)
+                    val updatedList = scheduler.getScheduledForDay(scheduledMeds, selectedDay)
+                    withContext(Dispatchers.Main) {
+                        medsForSelectedDay = updatedList
+                        isRefreshing.value = false
                     }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
             }
+        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp)
+            ) {
 
-            // Row 2: Scrollable Dates
-            item {
-                Row(
-                    modifier = Modifier
-                        .horizontalScroll(rememberScrollState())
-                        .fillMaxWidth()
-                ) {
-                    for (i in 0 until 7) {
-                        val date = startOfWeek.plusDays(i.toLong())
-                        val isSelected = date == selectedDay
-                        val isToday = date == today
+                // Row 1: Day names
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        daysOfWeek.forEach { day ->
+                            Text(
+                                text = day.getDisplayName(
+                                    java.time.format.TextStyle.SHORT,
+                                    Locale.getDefault()
+                                ),
+                                modifier = Modifier.weight(1f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
 
-                        Column(
-                            modifier = Modifier
-                                .padding(horizontal = 8.dp)
-                                .clickable {
-                                    selectedDay = date
-                                    selectedDTNow = LocalDateTime.of(date, tod)
-                               },
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = when {
-                                    isSelected -> MaterialTheme.colorScheme.primary
-                                    else -> Color.Transparent
-                                },
-                                modifier = Modifier.size(36.dp),
-                                border = if (isToday && !isSelected)
-                                    BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-                                else null
+                // Row 2: Scrollable Dates
+                item {
+                    Row(
+                        modifier = Modifier
+                            .horizontalScroll(rememberScrollState())
+                            .fillMaxWidth()
+                    ) {
+                        for (i in 0 until 7) {
+                            val date = startOfWeek.plusDays(i.toLong())
+                            val isSelected = date == selectedDay
+                            val isToday = date == today
+
+                            Column(
+                                modifier = Modifier
+                                    .padding(horizontal = 8.dp)
+                                    .clickable {
+                                        selectedDay = date
+                                        selectedDTNow = LocalDateTime.of(date, tod)
+                                    },
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = date.dayOfMonth.toString(),
-                                        color = if (isSelected) Color.White else Color.Black,
-                                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
-                                    )
+                                Surface(
+                                    shape = CircleShape,
+                                    color = when {
+                                        isSelected -> MaterialTheme.colorScheme.primary
+                                        else -> Color.Transparent
+                                    },
+                                    modifier = Modifier.size(36.dp),
+                                    border = if (isToday && !isSelected)
+                                        BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                                    else null
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = date.dayOfMonth.toString(),
+                                            color = if (isSelected) Color.White else Color.Black,
+                                            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
-                Spacer(modifier = Modifier.height(16.dp))
-            }
 
-            // Row 3: Selected Date Header
-            item {
-                Text(
-                    text = if (selectedDay == today)
-                        "Today, ${selectedDay.dayOfMonth} ${
-                            selectedDay.month.name.take(3).capitalize(Locale.ROOT)
-                        }"
-                    else
-                        selectedDay.format(java.time.format.DateTimeFormatter.ofPattern("EEE, d MMM")),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Spacer(modifier = Modifier.height(32.dp))
-            }
+                // Row 3: Selected Date Header
+                item {
+                    Text(
+                        text = if (selectedDay == today)
+                            "Today, ${selectedDay.dayOfMonth} ${
+                                selectedDay.month.name.take(3).capitalize(Locale.ROOT)
+                            }"
+                        else
+                            selectedDay.format(DateTimeFormatter.ofPattern("EEE, d MMM")),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
+                }
 
-            // Row 4+: Loading, error, or meds
-            when {
-                isLoading -> {
-                    item {
-                        CircularProgressIndicator()
+                // Row 4+: Loading, error, or meds
+                when {
+                    isLoading -> {
+                        item {
+                            CircularProgressIndicator()
+                        }
                     }
-                }
 
-                errorMessage != null -> {
-                    item {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(errorMessage, color = MaterialTheme.colorScheme.error)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(onClick = { thisVM.loadVM() }) {
-                                Text("Try Again")
+                    errorMessage != null -> {
+                        item {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(errorMessage, color = MaterialTheme.colorScheme.error)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(onClick = { thisVM.loadVM() }) {
+                                    Text("Try Again")
+                                }
                             }
                         }
                     }
-                }
 
-                medsForSelectedDay.isEmpty() -> {
-                    item {
-                        Text("No medications scheduled for this day.")
+                    medsForSelectedDay.isEmpty() -> {
+                        item {
+                            Text("No medications scheduled for this day.")
+                        }
                     }
-                }
 
-                else -> {
-                    items(medsForSelectedDay, key = { it.medId }) { med ->
-                        MedCard(MedCardParms(med, LocalDateTime.now(), selectedDay, selectedDTNow, settingsObj))
+                    else -> {
+                        items(medsForSelectedDay, key = { it.medId }) { med ->
+                            MedCard(
+                                MedCardParms(
+                                    med,
+                                    LocalDateTime.now(),
+                                    selectedDay,
+                                    selectedDTNow,
+                                    settingsObj,
+                                    onMedTaken = {
+                                        CoroutineScope(Dispatchers.IO).launch {
+                                            val scheduler = MedsRepo(context)
+                                            val updatedList = scheduler.getScheduledForDay(
+                                                scheduledMeds,
+                                                selectedDay
+                                            )
+                                            withContext(Dispatchers.Main) {
+                                                medsForSelectedDay = updatedList
+                                            }
+                                        }
+                                    }), context
+                            )
+                        }
                     }
                 }
             }
         }
     }
 }
-
 
 

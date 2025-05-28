@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +27,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import uk.co.explose.schminder.android.core.AppDb
 import uk.co.explose.schminder.android.core.AppGlobal
 import uk.co.explose.schminder.android.mapper.MedScheduledDisplayItem
@@ -38,27 +43,24 @@ import java.time.LocalTime
 
 @Composable
 fun MedicationTakeScreen(medId: Int, navController: NavHostController) {
-    AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - Medication Take Screen"))
-
     val context = LocalContext.current
     val medsRepo = remember { MedsRepo(context) }
     var medCurrent by remember { mutableStateOf<MedScheduledDisplayItem?>(null) }
     var medNext by remember { mutableStateOf<MedScheduledDisplayItem?>(null) }
-    val todNow = LocalTime.now().withSecond(0).withNano(0)
+    val refreshTrigger = remember { mutableStateOf(false) }
     val dateNow = LocalDate.now()
 
-    LaunchedEffect(medId) {
+    LaunchedEffect(medId, refreshTrigger.value) {
         if (medId > 0) {
             medCurrent = medsRepo.readMedScheduledDisplayItemById(medId)
-            val medsAll = medsRepo.medListAll()
-            medNext = medsRepo.getNextMedScheduledDisplayItemFrom(medsAll, medCurrent!!, dateNow)
-            //medNext = medsRepo.readMedScheduledDisplayItemNextByDT(medCurrent!!.medDTDerived, medCurrent!!.medId)
+            medCurrent?.let {
+                val medsAll = medsRepo.medListAll()
+                medNext = medsRepo.getNextMedScheduledDisplayItemFrom(medsAll, medCurrent!!, dateNow)
+            }
         }
     }
 
-    Scaffold(
-
-    ) { padding ->
+    Scaffold { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -66,18 +68,40 @@ fun MedicationTakeScreen(medId: Int, navController: NavHostController) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Current Med Info
             Text("Take Medication", style = MaterialTheme.typography.headlineSmall)
 
+            // ✅ If medication not taken yet
             medCurrent?.let { med ->
-                MedicationDetailCard(
-                    title = "Medication Taken",
-                    label = med.medName,
-                    scheduledTime = med.medTodDerived.toString(),
-                    takenTime = todNow.toString()
-                )
+                if (med.medDTTaken == null) {
+                    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(4.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(text = "Take Medication", style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.height(8.dp))
+                            Text(text = med.medName)
+                            Text(text = "Time: ${med.medTodDerived}")
+                            Button(onClick = {
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    medsRepo.markMedicationAsTaken(med.medId)
+                                    withContext(Dispatchers.Main) {
+                                        refreshTrigger.value = !refreshTrigger.value // toggle to retrigger LaunchedEffect
+                                    }
+                                }
+                            }) {
+                                Text("Mark as Taken")
+                            }
+                        }
+                    }
+                } else {
+                    MedicationDetailCard(
+                        title = "Medication Taken",
+                        label = med.medName,
+                        scheduledTime = med.medTodDerived.toString(),
+                        takenTime = med.medDTTaken?.toLocalTime()?.toString() ?: "—"
+                    )
+                }
             }
 
+            // ✅ Show next medication if available
             medNext?.let { next ->
                 MedicationDetailCard(
                     title = "Next medication",
@@ -98,7 +122,8 @@ fun MedicationDetailCard(title: String, label: String, scheduledTime: String, ta
             Spacer(Modifier.height(8.dp))
             Text(text = label, style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
-            Text("Scheduled Time: $scheduledTime")
+            /* Scheduled Time */
+            Text("Time: $scheduledTime")
             if (takenTime != null) {
                 Text("Taken Time: $takenTime")
             }

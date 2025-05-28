@@ -177,6 +177,9 @@ interface MedsScheduledDao {
 
     @Query("Update medsscheduledtbl set medDTNotifyLast = :medDTNotifyLast where medId = :medId")
     suspend fun updateNotifyLastById(medId: Int, medDTNotifyLast: LocalDateTime)
+
+    @Query("Update medsscheduledtbl set medDTTaken = :dtCurrent where medId = :medId")
+    suspend fun updateDTTakenById(medId: Int, dtCurrent: LocalDateTime)
 }
 
 @Database(

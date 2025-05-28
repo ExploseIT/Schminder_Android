@@ -20,22 +20,22 @@ fun getMedStatus(
     val medDateTime = LocalDateTime.of(dayRel, med.medTodDerived)
 
     return when {
-        med.medDTTaken != null -> medStatus.from(MedStatusName.MedSTaken, true)
+        med.medDTTaken != null -> medStatus.from(MedStatusName.MedSTaken, med, true)
 
         // "Take now" if within ±marginMinutes
         dtNow.isAfter(medDateTime.minusMinutes(objSettings.windowMinutes)) &&
-                dtNow.isBefore(medDateTime.plusMinutes(objSettings.windowMinutes)) -> medStatus.from(MedStatusName.MedSTakeNow)
+                dtNow.isBefore(medDateTime.plusMinutes(objSettings.windowMinutes)) -> medStatus.from(MedStatusName.MedSTakeNow,med )
 
         // "Soon" if within the `soonMinutes` before med time (but outside margin window)
-        dtNow.isAfter(medDateTime.minusMinutes(objSettings.soonMinutes)) && dtNow.isBefore(medDateTime) -> medStatus.from(MedStatusName.MedSSoon)
+        dtNow.isAfter(medDateTime.minusMinutes(objSettings.soonMinutes)) && dtNow.isBefore(medDateTime) -> medStatus.from(MedStatusName.MedSSoon, med)
 
         // "Missed" if well past time
-        dtNow.isAfter(medDateTime.plusMinutes(objSettings.missedMinutes)) -> medStatus.from(MedStatusName.MedSMissed)
+        dtNow.isAfter(medDateTime.plusMinutes(objSettings.missedMinutes)) -> medStatus.from(MedStatusName.MedSMissed, med)
 
         // Too early to show anything
-        dtNow.isBefore(medDateTime.minusMinutes(objSettings.missedMinutes)) -> medStatus.from(MedStatusName.MedSDefault)
+        dtNow.isBefore(medDateTime.minusMinutes(objSettings.missedMinutes)) -> medStatus.from(MedStatusName.MedSDefault, med)
 
-        else -> medStatus.from(MedStatusName.MedSDefault)
+        else -> medStatus.from(MedStatusName.MedSDefault, med)
     }
 }
 
@@ -60,13 +60,14 @@ data class medStatus (
     var medsText: String,
     var medsStatus: MedStatusName,
     var medsColour: MedStatusColor,
-    var medsTaken: Boolean = false
+    var medsTaken: Boolean = false,
+    var medsItem: MedScheduledDisplayItem
 ) {
     fun isNotBlank(): Boolean = medsText.isNotBlank()
     fun isBlank(): Boolean = medsText.isBlank()
 
     companion object {
-        fun from(status: MedStatusName, taken: Boolean = false): medStatus {
+        fun from(status: MedStatusName, medsItem: MedScheduledDisplayItem, taken: Boolean = false): medStatus {
             val colour = when (status) {
                 MedStatusName.MedSTaken -> MedStatusColor.MedSTaken
                 MedStatusName.MedSTakeNow -> MedStatusColor.MedSTakeNow
@@ -77,7 +78,7 @@ data class medStatus (
 
             val text = if (status == MedStatusName.MedSDefault) "" else status.status
 
-            return medStatus(text, status, colour, taken)
+            return medStatus(text, status, colour, taken, medsItem)
         }
     }
 }
