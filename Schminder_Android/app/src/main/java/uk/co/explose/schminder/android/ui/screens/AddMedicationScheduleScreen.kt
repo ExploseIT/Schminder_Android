@@ -122,7 +122,8 @@ fun AddMedicationScheduleScreen(
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(16.dp),
+                .padding(16.dp)
+            .fillMaxWidth(),   // <--- Make sure Column is full width
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Button(
@@ -137,57 +138,68 @@ fun AddMedicationScheduleScreen(
             Row {
                 repeatTypeOptions.forEach { option ->
                     if (modeDebug || option.sortOrder < 100)
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(end = 8.dp)
-                    ) {
-                        RadioButton(
-                            selected = repeatType == option,
-                            onClick = { repeatType = option }
-                        )
-                        Text(
-                            text = option.name, // use label instead of toString() for clean display
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(end = 8.dp)
+                        ) {
+                            RadioButton(
+                                selected = repeatType == option,
+                                onClick = { repeatType = option }
+                            )
+                            Text(
+                                text = option.name, // use label instead of toString() for clean display
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("For", modifier = Modifier.padding(end = 8.dp))
-                OutlinedTextField(
-                    value = durationCount,
-                    onValueChange = { durationCount = it },
-                    label = { Text("Count") },
-                    modifier = Modifier.width(100.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .padding(0.dp)
+                    .fillMaxWidth(),   // <--- Make sure Column is full width
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                durationUnits.forEach { unit ->
+                if (repeatType == MedRepeatTypeEnum.Count) {
+                    Spacer(modifier = Modifier.height(2.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (unit.sortOrder < 100)
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(end = 8.dp)
-                            ) {
-                                RadioButton(
-                                    selected = durationUnit == unit.toString(),
-                                    onClick = { durationUnit = unit.toString() })
+                        Text("For", modifier = Modifier.padding(end = 8.dp))
+                        OutlinedTextField(
+                            value = durationCount,
+                            onValueChange = { durationCount = it },
+                            label = { Text("Count") },
+                            modifier = Modifier.width(100.dp)
+                        )
+                    }
+                }
 
-                                Text(unit.toString())
+                if (repeatType == MedRepeatTypeEnum.Count) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        durationUnits.forEach { unit ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (unit.sortOrder < 100)
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    ) {
+                                        RadioButton(
+                                            selected = durationUnit == unit.toString(),
+                                            onClick = { durationUnit = unit.toString() })
+
+                                        Text(unit.toString())
+                                    }
                             }
+                        }
                     }
                 }
             }
         }
-
         if (showTimePicker) {
             TimePickerDialog(
                 onDismissRequest = { showTimePicker = false },

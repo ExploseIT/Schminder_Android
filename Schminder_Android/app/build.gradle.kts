@@ -21,8 +21,8 @@ android {
         applicationId = "uk.co.explose.schminder.android"
         minSdk = 27
         targetSdk = 36
-        versionCode = 15
-        versionName = "1.0.1.15"
+        versionCode = 16
+        versionName = "1.0.1.16"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -107,6 +107,8 @@ dependencies {
 
     implementation("com.google.accompanist:accompanist-swiperefresh:0.33.2-alpha")
 
+    implementation("com.google.android.gms:play-services-wearable:19.0.0")
+
     // 🔁 Navigation for Compose
     implementation(libs.androidx.navigation.compose)
 
@@ -119,6 +121,8 @@ dependencies {
     implementation ("com.google.mlkit:text-recognition:16.0.0")
 
     implementation ("com.google.accompanist:accompanist-permissions:0.35.0-alpha")
+
+    implementation ("androidx.datastore:datastore-preferences:1.1.0")
 
 
     // 🧪 Testing

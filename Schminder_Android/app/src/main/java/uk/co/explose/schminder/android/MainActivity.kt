@@ -25,14 +25,19 @@ import uk.co.explose.schminder.android.core.scheduleMedCheckAlarm
 import uk.co.explose.schminder.android.ui.theme.SchminderTheme
 import androidx.appcompat.app.AlertDialog
 import android.provider.Settings
-
+import com.google.android.gms.wearable.Wearable
+import uk.co.explose.schminder.android.core.WearMessageListener
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var requestNotificationPermissionLauncher: ActivityResultLauncher<String>
 
+    private lateinit var messageListener: WearMessageListener
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        messageListener = WearMessageListener(this)
 
         val initialRoute = intent?.getStringExtra("medRoute")
 
@@ -80,6 +85,16 @@ class MainActivity : ComponentActivity() {
         }
         intent?.removeExtra("medId")
 
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Wearable.getMessageClient(this).addListener(messageListener)
+    }
+
+    override fun onStop() {
+        Wearable.getMessageClient(this).removeListener(messageListener)
+        super.onStop()
     }
 
     private fun showPermissionDeniedDialog() {

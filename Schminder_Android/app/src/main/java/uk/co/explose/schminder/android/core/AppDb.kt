@@ -300,7 +300,7 @@ abstract class AppDb : RoomDatabase() {
                 database.execSQL("""
                     UPDATE MedsIndivTbl
                         SET medDTEntered = medDTEntered || 'T00:00:00'
-                        WHERE length(medDTEntered) = 10")
+                        WHERE length(medDTEntered) = 10
                       """.trimIndent())
             }
         }

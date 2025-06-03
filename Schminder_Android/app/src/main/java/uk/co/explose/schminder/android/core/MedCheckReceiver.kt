@@ -9,7 +9,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import uk.co.explose.schminder.android.BuildConfig
-import uk.co.explose.schminder.android.model.mpp.MedScheduleService
 
 import uk.co.explose.schminder.android.model.mpp.MedsRepo
 import uk.co.explose.schminder.android.model.settings.SettingsObj

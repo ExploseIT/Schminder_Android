@@ -1,6 +1,7 @@
 # macOS system files
 Schminder_Android/.idea/
 Schminder_Android/app/.DS_Store
+Schminder_Android/.DS_Store
 
 # Jetpack Compose build folders
 Schminder_Android/app/build

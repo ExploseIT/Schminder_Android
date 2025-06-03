@@ -1,6 +1,7 @@
 
 package uk.co.explose.schminder.android.core
 
+import com.google.firebase.auth.FirebaseUser
 import uk.co.explose.schminder.android.model.firebase.FirebaseTokenRx
 import uk.co.explose.schminder.android.model.firebase.FirebaseTokenTx
 import uk.co.explose.schminder.android.model.mpp.MedIndivInfo
@@ -12,7 +13,8 @@ data class m_apg_data (
     var mFirebaseTokenInfo: FirebaseTokenRx? = null,
     var m_medIndivInfo: MedIndivInfo? = null,
     var m_serverVersion: c_ServerVersion? = null,
-    var m_versionName: String? = null
+    var m_versionName: String? = null,
+    var mFirebaseUser: FirebaseUser? = null
  ) {
     fun isLoaded() : Boolean {
         var ret: Boolean = false

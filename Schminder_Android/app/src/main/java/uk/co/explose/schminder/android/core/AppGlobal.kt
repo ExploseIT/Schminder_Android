@@ -42,7 +42,7 @@ object AppGlobal {
 
                     firebaseUser?.getIdToken(true)?.addOnSuccessListener { result ->
                         val idToken = result.token
-                        val fbtUserUid = firebaseUser.uid
+                        val fbtUser = firebaseUser
                         m_apg = m_apg_data()
                         m_apg.m_versionName = context.packageManager
                             .getPackageInfo(context.packageName, 0).versionName
@@ -51,6 +51,7 @@ object AppGlobal {
                         )
                         m_apg.mFirebaseTokenInfo = FirebaseTokenRx.from(m_apg.mFirebaseToken!!.fbtToken,
                             m_apg.m_versionName ?: "", firebaseUser)
+                        m_apg.mFirebaseUser = fbtUser
                         CoroutineScope(Dispatchers.IO).launch {
                             try {
                                 doAPGDataLoad(context, m_apg.mFirebaseToken!!)

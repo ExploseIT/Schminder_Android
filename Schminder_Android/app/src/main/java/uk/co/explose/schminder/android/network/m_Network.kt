@@ -22,6 +22,8 @@ import uk.co.explose.schminder.android.model.mpp.MedIndivActionTx
 import uk.co.explose.schminder.android.model.mpp.MedIndivInfo
 import uk.co.explose.schminder.android.model.mpp.medInfo
 import uk.co.explose.schminder.android.model.mpp.med_search_tx
+import uk.co.explose.schminder.android.model.profile.UserProfileRequest
+import uk.co.explose.schminder.android.model.profile.UserProfileResponse
 import uk.co.explose.schminder.android.model.server_version.c_ServerVersion
 import uk.co.explose.schminder.android.model.user.UserProfile
 import uk.co.explose.schminder.android.utils.OffsetDateTimeAdapter
@@ -30,6 +32,9 @@ import java.time.OffsetDateTime
 
 // --- API SERVICE ---
 interface ApiService {
+    @POST("api/api_CreateProfileRequest")
+    suspend fun createProfile(@Body request: UserProfileRequest): Response<UserProfileResponse>
+
     @GET("api/users/profile")
     suspend fun getUserProfile(@Header("Authorization") token: String): Response<UserProfile>
 

@@ -55,15 +55,6 @@ fun ScheduleScreen(navController: NavHostController) {
         topBar = {
             TopAppBar(
                 title = { Text("Medications") },
-                /*
-                actions = {
-                    IconButton(onClick = {
-                        navController.navigate("addMedSchedule")
-                    }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add Medication")
-                    }
-                }
-                 */
             )
         },
         content = { paddingValues ->
@@ -91,7 +82,6 @@ fun ScheduleScreen(navController: NavHostController) {
                                 navController.navigate("medDetail/${group.medIndiv.medName}")
                             }
                         )
-
                     }
                     item {
                         MedsScheduledTable(navController, medGroups)

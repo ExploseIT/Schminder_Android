@@ -54,30 +54,6 @@ fun MedsScheduledTable(navController: NavHostController, medGroups: List<MedIndi
 
         Spacer(modifier = Modifier.weight(0.15f))
 
-// Header Row
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(Modifier.weight(nameWeight), contentAlignment = Alignment.CenterStart) {
-                Icon(Icons.Filled.Person, contentDescription = "Name", tint = Color.Gray)
-            }
-            Box(Modifier.weight(timeWeight), contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.AccessTime, contentDescription = "Time", tint = Color.Gray)
-            }
-            Box(Modifier.weight(freqWeight), contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.SyncAlt, contentDescription = "Freq", tint = Color.Gray)
-            }
-            Box(Modifier.weight(durWeight), contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.DateRange, contentDescription = "Duration", tint = Color.Gray)
-            }
-            Box(Modifier.weight(actionWeight), contentAlignment = Alignment.Center) {
-                //Icon(Icons.Filled.Delete, contentDescription = "Actions", tint = Color.Gray)
-            }
-        }
-
         // All group rows
         medGroups.forEach { group ->
             group.schedules
