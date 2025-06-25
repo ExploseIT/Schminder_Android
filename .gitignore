@@ -1,4 +1,5 @@
 # macOS system files
+.DS_Store
 Schminder_Android/.idea/
 Schminder_Android/app/.DS_Store
 Schminder_Android/.DS_Store
