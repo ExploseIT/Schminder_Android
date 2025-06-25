@@ -13,14 +13,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
-import uk.co.explose.schminder.android.core.AppGlobal
+import uk.co.explose.schminder.android.core.AppRepo
 import uk.co.explose.schminder.android.ui.components.ManageItem
 import uk.co.explose.schminder.android.ui.components.SectionHeader
 
 
 @Composable
 fun SettingsScreen(navController: NavHostController) {
-    AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - Manage"))
+    AppRepo.logEvent("test_event", mapOf("origin" to "Schminder - Manage"))
     Scaffold(
         //bottomBar = { AppBottomBar(currentRoute = "mockup", navController) }
     ) { innerPadding ->

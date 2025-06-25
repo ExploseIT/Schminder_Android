@@ -2,25 +2,21 @@
 package uk.co.explose.schminder.android.model.mpp
 
 import android.content.Context
-import androidx.room.Dao
-import androidx.room.Database
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
-import androidx.room.Query
-import androidx.room.Room
-import androidx.room.RoomDatabase
-import androidx.room.Transaction
+
 import uk.co.explose.schminder.android.network.RetrofitClient
-import androidx.room.TypeConverter
-import androidx.room.TypeConverters
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
+
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import retrofit2.Response
 import uk.co.explose.schminder.android.core.AppDb
 import uk.co.explose.schminder.android.core.insertAndReturn
 import uk.co.explose.schminder.android.mapper.MedScheduledDisplayItem
-import uk.co.explose.schminder.android.model.settings.AppSetting
+import uk.co.explose.schminder.android.model.profile.UserProfileResponse
+import uk.co.explose.schminder.android.model.user.UserRepo
+
+import uk.co.explose.schminder.android.repo.RepositoryBase
+import uk.co.explose.schminder.android.repo.Resource
+import uk.co.explose.schminder.android.utils.dtObject
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -28,23 +24,47 @@ import kotlin.text.insert
 import kotlin.toString
 
 
-class MedsRepo(private val context: Context) {
+object MedsRepo : RepositoryBase<MedIndivInfoResponse> {
+    private val _resp = MutableStateFlow<Resource<MedIndivInfoResponse>>(Resource.Empty())
+    override val data: StateFlow<Resource<MedIndivInfoResponse>> = _resp
 
-    private val db = AppDb.getInstance(context)
-    private val daoScheduled = db.medsScheduledDao()
-    private val daoMed = db.medsDao()
+    override suspend fun loadData(context: Context): Resource<MedIndivInfoResponse> {
+        _resp.value = Resource.Loading()
 
-    fun addMedsNew() {
+        return runCatching {
+            val response = RetrofitClient.api.getMedsIndivList()
 
+            if (response.isSuccessful) {
+                val responseBody = response.body()
+                if (responseBody != null && responseBody.apiSuccess) {
+                    Resource.Success(responseBody)
+                } else {
+                    Resource.Error(responseBody?.apiMessage ?: "Unknown server error")
+                }
+            } else {
+                val errorMessage = response.errorBody()?.string() ?: "Server Error"
+                Resource.Error(errorMessage)
+            }
+        }.getOrElse { e ->
+            val exception = if (e is Exception) e else Exception(e.message ?: "Unknown error")
+            Resource.Error("Network error: Please check your internet connection.", exception)
+        }.also {
+            _resp.value = it
+        }
     }
 
-    suspend fun readMedScheduledDisplayItemById(medId: Int): MedScheduledDisplayItem? {
-        val scheduled = daoScheduled.readById(medId) ?: return null
-        val med = daoMed.getMedById(scheduled.medIdSchedule) ?: return null
+    override fun setCachedData(newRes: Resource<MedIndivInfoResponse>): Resource<MedIndivInfoResponse>? {
+        _resp.value = newRes
+        return _resp.value
+    }
+
+    suspend fun readMedScheduledDisplayItemById(context: Context, medId: Int): MedScheduledDisplayItem? {
+        val scheduled = AppDb.getInstance(context).medsScheduledDao().readById(medId) ?: return null
+        val med = AppDb.getInstance(context).medsDao().getMedById(scheduled.medIdSchedule) ?: return null
         return scheduled.toMedScheduledDisplayItem(med)
     }
 
-    suspend fun readMedScheduledDisplayItemNextByDT(after: LocalDateTime, skipMedId: Int): MedScheduledDisplayItem? {
+    suspend fun readMedScheduledDisplayItemNextByDT(context: Context, after: LocalDateTime, skipMedId: Int): MedScheduledDisplayItem? {
         val nextScheduled = AppDb.getInstance(context).medsScheduledDao()
             .getNextScheduledAfterExcluding(after, skipMedId)
         val nextMed = nextScheduled?.let {
@@ -56,19 +76,7 @@ class MedsRepo(private val context: Context) {
     }
 
 
-    suspend fun doMedIndivLoad(): MedIndivInfo? {
-        return try {
-            val response = RetrofitClient.api.getMedsIndivList()
-            if (response.isSuccessful) {
-                response.body()
-            } else {
-                null // handle error (optional: log or throw)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
+
 
     suspend fun doMedIndivActionTx(medIndivInfo: MedIndivActionTx): MedIndivActionRx? {
         return try {
@@ -116,7 +124,7 @@ class MedsRepo(private val context: Context) {
         return medsIndiv.map { indiv ->
             MedIndiv(
                 medName = indiv.medName,
-                medDTEntered = LocalDateTime.now()
+                medDTEntered = dtObject().dtoNow
             )
         }
     }
@@ -142,7 +150,7 @@ class MedsRepo(private val context: Context) {
         return newEntry
     }
 
-    suspend fun loadMedsAndSchedule(lMeds: List<Med>, today: LocalDate, bInsert: Boolean) : List<MedScheduled> {
+    suspend fun loadMedsAndSchedule(context: Context, lMeds: List<Med>, today: LocalDate, bInsert: Boolean) : List<MedScheduled> {
         var ret = mutableListOf<MedScheduled>()
         lMeds.forEach { med ->
             var medScheduled = AppDb.getInstance(context).medsScheduledDao().exists(med.medId, today.atTime(med.medTimeofday))
@@ -154,64 +162,64 @@ class MedsRepo(private val context: Context) {
         return ret
     }
 
-    suspend fun loadMedsSchedule(): List<Med> {
+    suspend fun loadMedsSchedule(context: Context): List<Med> {
         return AppDb.getInstance(context).medsDao().medListAll()
     }
 
-    suspend fun saveMedLastNotified(med: MedScheduledDisplayItem) {
+    suspend fun saveMedLastNotified(context: Context, med: MedScheduledDisplayItem) {
         if (med.medId > 0) {
             AppDb.getInstance(context).medsScheduledDao()
                 .updateNotifyLastById(med.medId, med.medDTNotifyLast!!)
         }
     }
 
-    suspend fun readMedById(medId: Int) {
+    suspend fun readMedById(context: Context, medId: Int) {
         if (medId > 0) {
             AppDb.getInstance(context).medsScheduledDao()
                 .readById(medId)
         }
     }
 
-    suspend fun medIndivMedListAll(): List<MedIndivMed> {
+    suspend fun medIndivMedListAll(context: Context): List<MedIndivMed> {
         return AppDb.getInstance(context).medsIndivDao().MedIndivMedListAll()
     }
 
-    suspend fun medIndivListAll(): List<MedIndiv> {
+    suspend fun medIndivListAll(context: Context): List<MedIndiv> {
         return AppDb.getInstance(context).medsIndivDao().medIndivList()
     }
 
-    suspend fun medIndivDtoListAll(): List<MedIndivDto> {
+    suspend fun medIndivDtoListAll(context: Context): List<MedIndivDto> {
         return AppDb.getInstance(context).medsIndivDao().medIndivList()
             .map { MedIndivDto(medName = it.medName) }
     }
 
-    suspend fun medIndivDtoInsertAll(medsIndiv: List<MedIndivDto>): List<Long> {
+    suspend fun medIndivDtoInsertAll(context: Context, medsIndiv: List<MedIndivDto>): List<Long> {
         val meds = convertIndivDtoToIndiv(medsIndiv)
         return AppDb.getInstance(context).medsIndivDao().medIndivInsertAll(meds)
     }
 
-    suspend fun medIndivInsertAll(meds: List<MedIndiv>): List<Long> {
+    suspend fun medIndivInsertAll(context: Context, meds: List<MedIndiv>): List<Long> {
         return AppDb.getInstance(context).medsIndivDao().medIndivInsertAll(meds)
     }
 
-    suspend fun medIndivDeleteByName(medName: String) {
+    suspend fun medIndivDeleteByName(context: Context, medName: String) {
         return AppDb.getInstance(context).medsIndivDao().medDeleteByName(medName)
     }
 
-    suspend fun medListAll(): List<Med> {
+    suspend fun medListAll(context: Context): List<Med> {
         return AppDb.getInstance(context).medsDao().medListAll()
     }
 
-    suspend fun medInsert(med: Med): Long {
+    suspend fun medInsert(context: Context, med: Med): Long {
         return AppDb.getInstance(context).medsDao().medInsert(med)
     }
 
-    suspend fun medReadById(id: Int): Med? {
+    suspend fun medReadById(context: Context, id: Int): Med? {
         return AppDb.getInstance(context).medsDao().getMedById(id)
     }
 
 
-    suspend fun getScheduledForDay(meds: List<Med>, day: LocalDate): List<MedScheduledDisplayItem> {
+    suspend fun getScheduledForDay(context: Context, meds: List<Med>, day: LocalDate): List<MedScheduledDisplayItem> {
         val dao = AppDb.getInstance(context).medsScheduledDao()
         val today = LocalDate.now()
         val result = mutableListOf<MedScheduledDisplayItem>()
@@ -243,13 +251,14 @@ class MedsRepo(private val context: Context) {
         return result
     }
 
-    suspend fun markMedicationAsTaken(medId: Int) {
+    suspend fun markMedicationAsTaken(context: Context, medId: Int) {
         val dao = AppDb.getInstance(context).medsScheduledDao()
-        val now = LocalDateTime.now().withSecond(0).withNano(0)
+        val now = dtObject().dtoNow.withSecond(0).withNano(0)
         dao.updateDTTakenById(medId, now)
     }
 
     suspend fun getNextMedScheduledDisplayItemFrom(
+        context: Context,
         allMeds: List<Med>,
         currentMed: MedScheduledDisplayItem,
         day: LocalDate
@@ -286,12 +295,12 @@ class MedsRepo(private val context: Context) {
         dt: LocalDateTime
     ): MedScheduledDisplayItem {
         val derivedTod = if (med.medRepeatType == MedRepeatTypeEnum.Now)
-            LocalTime.now().withSecond(0).withNano(0)
+            dtObject().dtoTod.withSecond(0).withNano(0)
         else
             med.medTimeofday
 
         val derivedDT = if (med.medRepeatType == MedRepeatTypeEnum.Now)
-            LocalDateTime.now().withSecond(0).withNano(0)
+            dtObject().dtoNow.withSecond(0).withNano(0)
         else
             dt
 
@@ -310,6 +319,14 @@ class MedsRepo(private val context: Context) {
             medDTDerived = derivedDT,
             medTodDerived = derivedTod
         )
+    }
+
+    override fun getCachedData(): Resource<MedIndivInfoResponse> {
+        return _resp.value
+    }
+
+    override suspend fun refreshData(context: Context): Resource<MedIndivInfoResponse> {
+        TODO("Not yet implemented")
     }
 
 }

@@ -13,6 +13,7 @@ import uk.co.explose.schminder.android.BuildConfig
 import uk.co.explose.schminder.android.model.mpp.MedsRepo
 import uk.co.explose.schminder.android.model.settings.SettingsObj
 import uk.co.explose.schminder.android.ui.viewmodels.MedScheduleVM
+import uk.co.explose.schminder.android.utils.dtObject
 import java.time.LocalDateTime
 import java.time.Duration
 import java.time.LocalDate
@@ -21,15 +22,14 @@ class MedCheckReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         CoroutineScope(Dispatchers.IO).launch {
             val modeDebug: Boolean = BuildConfig.DEBUG
-            val medsRepo = MedsRepo(context)
 
             val settingsObj: SettingsObj? = App_Db(context).getSettingsObj()
-            val now = LocalDateTime.now()
+            val now = dtObject().dtoNow
             val setNotificationWindowMinutes = settingsObj!!.notificationMinutes
-            val today = now.toLocalDate()
+            val today = dtObject().dtoDay
 
-            val medsSchedule = medsRepo.loadMedsSchedule()
-            var medsScheduled = MedsRepo(context).getScheduledForDay(medsSchedule, today)
+            val medsSchedule = MedsRepo.loadMedsSchedule(context)
+            var medsScheduled = MedsRepo.getScheduledForDay(context,medsSchedule, today)
 
             var count = 0
             var shouldNotify = false
@@ -47,7 +47,7 @@ class MedCheckReceiver : BroadcastReceiver() {
                 if (shouldNotify) {
                     showNotification(context, med)
                     med.medDTNotifyLast = now
-                    medsRepo.saveMedLastNotified(med)
+                    MedsRepo.saveMedLastNotified(context, med)
                 }
                 count++;
             }

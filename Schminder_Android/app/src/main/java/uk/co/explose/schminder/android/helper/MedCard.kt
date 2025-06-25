@@ -33,6 +33,7 @@ import uk.co.explose.schminder.android.model.mpp.MedRepeatIntervalEnum
 import uk.co.explose.schminder.android.model.mpp.MedRepeatTypeEnum
 import uk.co.explose.schminder.android.model.mpp.MedsRepo
 import uk.co.explose.schminder.android.model.settings.SettingsObj
+import uk.co.explose.schminder.android.utils.dtObject
 
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -92,6 +93,7 @@ fun MedCard(mp: MedCardParms, context: Context) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    //Seems to loop here a couple of times
                     Text(
                         text = status.medsText,
                         style = MaterialTheme.typography.labelLarge,
@@ -102,13 +104,13 @@ fun MedCard(mp: MedCardParms, context: Context) {
                     if (status.medsStatus == MedStatusName.MedSTakeNow) {
                         IconButton(
                             onClick = {
-                                val now = LocalDateTime.now()
+                                val now = dtObject().dtoNow
                                 val item = status.medsItem
                             /* mark as taken */
                                 AppToast(context).showToast("Take medication $status.medsTaken.toString()")
                                 // Set the time taken
                                 CoroutineScope(Dispatchers.IO).launch {
-                                    MedsRepo(context).markMedicationAsTaken(item.medId)
+                                    MedsRepo.markMedicationAsTaken(context, item.medId)
 
                                     withContext(Dispatchers.Main) {
                                         mp.onMedTaken();

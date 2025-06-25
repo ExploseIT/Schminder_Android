@@ -22,15 +22,15 @@ fun getMedStatus(
     return when {
         med.medDTTaken != null -> medStatus.from(MedStatusName.MedSTaken, med, true)
 
+        // "Soon" if within the `soonMinutes` before med time (but outside margin window)
+        dtNow.isAfter(medDateTime.minusMinutes(objSettings.soonMinutes)) && dtNow.isBefore(medDateTime) -> medStatus.from(MedStatusName.MedSSoon, med)
+
         // "Take now" if within ±marginMinutes
         dtNow.isAfter(medDateTime.minusMinutes(objSettings.windowMinutes)) &&
                 dtNow.isBefore(medDateTime.plusMinutes(objSettings.windowMinutes)) -> medStatus.from(MedStatusName.MedSTakeNow,med )
 
-        // "Soon" if within the `soonMinutes` before med time (but outside margin window)
-        dtNow.isAfter(medDateTime.minusMinutes(objSettings.soonMinutes)) && dtNow.isBefore(medDateTime) -> medStatus.from(MedStatusName.MedSSoon, med)
-
-        // "Missed" if well past time
-        dtNow.isAfter(medDateTime.plusMinutes(objSettings.missedMinutes)) -> medStatus.from(MedStatusName.MedSMissed, med)
+        // "Missed" if past window
+        dtNow.isAfter(medDateTime.plusMinutes(objSettings.windowMinutes)) -> medStatus.from(MedStatusName.MedSMissed, med)
 
         // Too early to show anything
         dtNow.isBefore(medDateTime.minusMinutes(objSettings.missedMinutes)) -> medStatus.from(MedStatusName.MedSDefault, med)

@@ -78,11 +78,11 @@ fun AddMedicationScheduleScreen(
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val medsRepo = remember { MedsRepo(context) }
+    val medsRepo = remember { MedsRepo }
 
     LaunchedEffect(medId) {
         if (medId > 0) {
-            val med = medsRepo.medReadById(medId)
+            val med = medsRepo.medReadById(context, medId)
             med?.let {
                 repeatType = it.medRepeatType
                 durationCount = it.medRepeatCount.toString()

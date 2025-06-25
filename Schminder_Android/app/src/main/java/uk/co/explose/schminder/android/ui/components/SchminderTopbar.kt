@@ -20,19 +20,31 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import uk.co.explose.schminder.android.core.AppToast
+import uk.co.explose.schminder.android.model.profile.UserProfile
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SchminderTopBar(
-    userName: String = "Guest",
+    up: UserProfile = UserProfile(),
     showBackButton: Boolean = true,
     onBackClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
     onProfileClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     TopAppBar(
-        title = {},
+        title = {
+            Text(
+                text = "Schminder",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color(0xFF000000),
+                modifier = Modifier.padding(start = 2.dp)
+            )
+        },
         navigationIcon = {
             if (showBackButton) {
                 IconButton(onClick = onBackClick) {
@@ -44,10 +56,17 @@ fun SchminderTopBar(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .clickable(onClick = onProfileClick)
+                    .clickable(onClick = {
+                        onProfileClick()
+                    })
                     .padding(end = 16.dp)
             ) {
-                Text(text = userName, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = up.getUserName(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFF1976D2), // A calm material blue
+                    modifier = Modifier.padding(start = 8.dp)
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 IconButton(onClick = onNotificationClick) {
                     Icon(

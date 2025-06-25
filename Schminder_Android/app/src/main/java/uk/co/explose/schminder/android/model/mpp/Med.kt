@@ -7,8 +7,10 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 import androidx.room.Relation
+import uk.co.explose.schminder.android.core.ApiResponse
 import uk.co.explose.schminder.android.core.HasIntId
 import uk.co.explose.schminder.android.mapper.MedScheduledDisplayItem
+import uk.co.explose.schminder.android.utils.dtObject
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -20,8 +22,9 @@ data class MedIndivDto(
 
 
 data class MedIndivInfo (
-    var medIndivName: String,
-    var medIndivList: List<MedIndivDto>
+    var medIndivName: String = "",
+    var medServerVersion: String = "",
+    var medIndivList: List<MedIndivDto> = emptyList<MedIndivDto>()
 )
 
 @Entity(tableName = "MedsIndivTbl")
@@ -33,11 +36,13 @@ data class MedIndiv(
         fun fromDto(dto: MedIndivDto): MedIndiv {
             return MedIndiv(
                 medName = dto.medName,
-                medDTEntered = LocalDateTime.now()
+                medDTEntered = dtObject().dtoNow
             )
         }
     }
 }
+
+typealias MedIndivInfoResponse = ApiResponse<MedIndivInfo>
 
 data class MedScheduledWithMed(
     @Embedded val medScheduled: MedScheduled,
@@ -68,7 +73,7 @@ data class MedScheduled(
     var medIdSchedule: Int = 0,
     var medName: String = "",
     var medInfo: String = "",
-    var medDTSchedule: LocalDateTime = LocalDateTime.now(),
+    var medDTSchedule: LocalDateTime = dtObject().dtoNow,
     var medDTTaken: LocalDateTime? = null,
     var medDTNotifyLast: LocalDateTime? = null
 ) : HasIntId {
@@ -84,7 +89,7 @@ data class MedScheduled(
             med.medTimeofday
 
         val derivedDT = if (med.medRepeatType == MedRepeatTypeEnum.Now)
-            LocalDateTime.now().withSecond(0).withNano(0)
+            dtObject().dtoNow.withSecond(0).withNano(0)
         else
             this.medDTSchedule
 

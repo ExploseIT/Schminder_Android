@@ -28,7 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
-import uk.co.explose.schminder.android.core.AppGlobal
+import uk.co.explose.schminder.android.core.AppRepo
 import uk.co.explose.schminder.android.model.mpp.MedIndivMed
 import uk.co.explose.schminder.android.model.mpp.MedsRepo
 import uk.co.explose.schminder.android.ui.components.MedItem
@@ -40,15 +40,15 @@ import uk.co.explose.schminder.android.ui.components.MedsScheduledTable
 fun ScheduleScreen(navController: NavHostController) {
     val context = LocalContext.current
     val activity = LocalContext.current as? Activity
-    val medsRepo = MedsRepo(context)
+    val medsRepo = MedsRepo
     val coroutineScope = rememberCoroutineScope()
 
     var medGroups by remember { mutableStateOf<List<MedIndivMed>>(emptyList()) }
 
-    AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - Medication"))
+    AppRepo.logEvent("test_event", mapOf("origin" to "Schminder - Medication"))
 
     LaunchedEffect(Unit) {
-        medGroups = medsRepo.medIndivMedListAll()
+        medGroups = medsRepo.medIndivMedListAll(context)
     }
 
     Scaffold(

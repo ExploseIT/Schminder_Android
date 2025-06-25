@@ -32,7 +32,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uk.co.explose.schminder.android.core.AppDb
-import uk.co.explose.schminder.android.core.AppGlobal
+import uk.co.explose.schminder.android.core.AppRepo
 import uk.co.explose.schminder.android.mapper.MedScheduledDisplayItem
 import uk.co.explose.schminder.android.model.mpp.Med
 import uk.co.explose.schminder.android.model.mpp.MedScheduled
@@ -44,7 +44,7 @@ import java.time.LocalTime
 @Composable
 fun MedicationTakeScreen(medId: Int, navController: NavHostController) {
     val context = LocalContext.current
-    val medsRepo = remember { MedsRepo(context) }
+    val medsRepo = remember { MedsRepo }
     var medCurrent by remember { mutableStateOf<MedScheduledDisplayItem?>(null) }
     var medNext by remember { mutableStateOf<MedScheduledDisplayItem?>(null) }
     val refreshTrigger = remember { mutableStateOf(false) }
@@ -52,10 +52,10 @@ fun MedicationTakeScreen(medId: Int, navController: NavHostController) {
 
     LaunchedEffect(medId, refreshTrigger.value) {
         if (medId > 0) {
-            medCurrent = medsRepo.readMedScheduledDisplayItemById(medId)
+            medCurrent = medsRepo.readMedScheduledDisplayItemById(context, medId)
             medCurrent?.let {
-                val medsAll = medsRepo.medListAll()
-                medNext = medsRepo.getNextMedScheduledDisplayItemFrom(medsAll, medCurrent!!, dateNow)
+                val medsAll = medsRepo.medListAll(context)
+                medNext = medsRepo.getNextMedScheduledDisplayItemFrom(context, medsAll, medCurrent!!, dateNow)
             }
         }
     }
@@ -81,7 +81,7 @@ fun MedicationTakeScreen(medId: Int, navController: NavHostController) {
                             Text(text = "Time: ${med.medTodDerived}")
                             Button(onClick = {
                                 CoroutineScope(Dispatchers.IO).launch {
-                                    medsRepo.markMedicationAsTaken(med.medId)
+                                    medsRepo.markMedicationAsTaken(context, med.medId)
                                     withContext(Dispatchers.Main) {
                                         refreshTrigger.value = !refreshTrigger.value // toggle to retrigger LaunchedEffect
                                     }

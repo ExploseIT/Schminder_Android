@@ -23,7 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.style.TextAlign
 import kotlinx.coroutines.launch
-import uk.co.explose.schminder.android.core.AppGlobal
+import uk.co.explose.schminder.android.core.AppRepo
 import uk.co.explose.schminder.android.model.settings.AppSetting
 import uk.co.explose.schminder.android.ui.components.ManageItem
 import uk.co.explose.schminder.android.ui.viewmodels.SettingsScreenVM
@@ -38,11 +38,11 @@ fun ScheduleSettingsScreen(navController: NavHostController) {
     val coroutineScope = rememberCoroutineScope()
 
     val settingsList:List<AppSetting>? = thisVM.settingsList
-    val apg_data = thisVM.apg_data
+
     val isLoading = thisVM.isLoading
     val error = thisVM.errorMessage
 
-    AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - Settings"))
+    AppRepo.logEvent("test_event", mapOf("origin" to "Schminder - Settings"))
 
     LaunchedEffect(Unit) {
         thisVM.loadVM()

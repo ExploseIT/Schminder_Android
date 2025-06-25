@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.sqlite.DataType
 
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
@@ -46,7 +47,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import uk.co.explose.schminder.android.core.AppGlobal
+import uk.co.explose.schminder.android.core.AppRepo
+
 import uk.co.explose.schminder.android.helper.MedCard
 import uk.co.explose.schminder.android.helper.MedCardParms
 import uk.co.explose.schminder.android.mapper.MedScheduledDisplayItem
@@ -54,6 +56,7 @@ import uk.co.explose.schminder.android.model.mpp.MedsRepo
 
 import uk.co.explose.schminder.android.ui.components.FabItem
 import uk.co.explose.schminder.android.ui.viewmodels.HomeScreenVM
+import uk.co.explose.schminder.android.utils.dtObject
 
 
 import java.time.DayOfWeek
@@ -70,30 +73,34 @@ fun HomeScreen(navController: NavHostController) {
     val context = LocalContext.current
     val thisVM: HomeScreenVM = remember { HomeScreenVM(context) }
 
-    val now = LocalDateTime.now()
-    val day = LocalDate.now()
+    val mDto = dtObject()
+    val now = mDto.dtoNow
+    val day = mDto.dtoDay
     // Get time of day
-    val tod: LocalTime = now.toLocalTime()
-    val dtNow = LocalDateTime.of(day, tod)
+    val tod: LocalTime = mDto.dtoTod
+    val dtNow = mDto.dtoDtNow
+
+
+    //val medsForToday = getMedListScheduledForToday(scheduledMeds, day)
+
+    val today = remember { dtObject().dtoDay }
+    var selectedDay by remember { mutableStateOf(today) }
+    var selectedDTNow by remember { mutableStateOf(dtNow) }
+
+    var bFirstTime by remember { mutableStateOf(true) }
+
+    // State to hold the resolved MedScheduled list
+    var medsForSelectedDay by remember { mutableStateOf<List<MedScheduledDisplayItem>>(emptyList()) }
 
     val parsedMeds = thisVM.parsedMeds
     val scheduledMeds = thisVM.scheduledMeds
     val isLoading = thisVM.isLoading
     val errorMessage = thisVM.errorMessage
 
-    //val medsForToday = getMedListScheduledForToday(scheduledMeds, day)
-
-    val today = remember { LocalDate.now() }
-    var selectedDay by remember { mutableStateOf(today) }
-    var selectedDTNow by remember { mutableStateOf(dtNow) }
-
-    // State to hold the resolved MedScheduled list
-    var medsForSelectedDay by remember { mutableStateOf<List<MedScheduledDisplayItem>>(emptyList()) }
-
     // Whenever selectedDay or scheduledMeds change, recalculate
     LaunchedEffect(selectedDay, scheduledMeds) {
-        val scheduler = MedsRepo(context)
-        medsForSelectedDay = scheduler.getScheduledForDay(scheduledMeds, selectedDay)
+        val scheduler = MedsRepo
+        medsForSelectedDay = scheduler.getScheduledForDay(context, scheduledMeds, selectedDay)
     }
 
     val settingsObj = thisVM.settingsObj
@@ -105,10 +112,11 @@ fun HomeScreen(navController: NavHostController) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
-    AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - Home"))
+    AppRepo.logEvent("test_event", mapOf("origin" to "Schminder - Home"))
 
     LaunchedEffect(Unit) {
-        thisVM.loadVM()
+        thisVM.loadVM(bFirstTime)
+        bFirstTime = false
     }
 
     Scaffold(
@@ -173,9 +181,9 @@ fun HomeScreen(navController: NavHostController) {
             onRefresh = {
                 isRefreshing.value = true
                 CoroutineScope(Dispatchers.IO).launch {
-                    thisVM.loadVM()
-                    val scheduler = MedsRepo(context)
-                    val updatedList = scheduler.getScheduledForDay(scheduledMeds, selectedDay)
+                    thisVM.loadVM(bFirstTime)
+                    val scheduler = MedsRepo
+                    val updatedList = scheduler.getScheduledForDay(context, scheduledMeds, selectedDay)
                     withContext(Dispatchers.Main) {
                         medsForSelectedDay = updatedList
                         isRefreshing.value = false
@@ -227,7 +235,7 @@ fun HomeScreen(navController: NavHostController) {
                                     .padding(horizontal = 8.dp)
                                     .clickable {
                                         selectedDay = date
-                                        selectedDTNow = LocalDateTime.of(date, tod)
+                                        selectedDTNow = dtObject().dtoDtNow
                                     },
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
@@ -286,7 +294,7 @@ fun HomeScreen(navController: NavHostController) {
                             ) {
                                 Text(errorMessage, color = MaterialTheme.colorScheme.error)
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Button(onClick = { thisVM.loadVM() }) {
+                                Button(onClick = { thisVM.loadVM(bFirstTime) }) {
                                     Text("Try Again")
                                 }
                             }
@@ -304,14 +312,15 @@ fun HomeScreen(navController: NavHostController) {
                             MedCard(
                                 MedCardParms(
                                     med,
-                                    LocalDateTime.now(),
+                                    dtObject().dtoNow,
                                     selectedDay,
                                     selectedDTNow,
                                     settingsObj,
                                     onMedTaken = {
                                         CoroutineScope(Dispatchers.IO).launch {
-                                            val scheduler = MedsRepo(context)
+                                            val scheduler = MedsRepo
                                             val updatedList = scheduler.getScheduledForDay(
+                                                context,
                                                 scheduledMeds,
                                                 selectedDay
                                             )

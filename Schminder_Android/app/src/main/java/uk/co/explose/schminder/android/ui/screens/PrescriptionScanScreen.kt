@@ -60,11 +60,14 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.launch
-import uk.co.explose.schminder.android.core.AppGlobal
+import uk.co.explose.schminder.android.core.AppRepo
+import uk.co.explose.schminder.android.model.firebase.FirebaseRepo
 import uk.co.explose.schminder.android.model.mpp.MedsRepo
 import uk.co.explose.schminder.android.model.mpp.MedIndivActionTx
 import uk.co.explose.schminder.android.model.mpp.MedIndivDto
+import uk.co.explose.schminder.android.model.mpp.MedIndivInfo
 import uk.co.explose.schminder.android.model.mpp.med_search_tx
+import uk.co.explose.schminder.android.repo.Resource
 
 @ExperimentalGetImage
 @SuppressLint("ContextCastToActivity")
@@ -72,7 +75,7 @@ import uk.co.explose.schminder.android.model.mpp.med_search_tx
 @Composable
 fun PrescriptionScanScreen(navController: NavController) {
     val context = LocalContext.current
-    val medsRepo = MedsRepo(context)
+    val medsRepo = MedsRepo
 
     val lifecycleOwner = LocalLifecycleOwner.current
     val activity = LocalContext.current as? Activity
@@ -81,7 +84,10 @@ fun PrescriptionScanScreen(navController: NavController) {
 
     activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED //ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
-    val fbtUserUid = AppGlobal.doAPGDataRead().mFirebaseTokenInfo?.fbtUid ?: ""
+    val fbtUserUid = when (val data = FirebaseRepo.getData()) {
+        is Resource.Success -> data.data.apiData.fbtUid
+        else -> "empty"
+    }
 
     val outputText = remember { mutableStateOf("Scan a prescription...") }
     val parsedMeds = remember { mutableStateOf<List<MedIndivDto>>(emptyList()) }
@@ -91,13 +97,19 @@ fun PrescriptionScanScreen(navController: NavController) {
     val permissionState = rememberPermissionState(permission = cameraPermission)
 
     val previewView = remember { PreviewView(context) }
-    val knownMeds = AppGlobal.doAPGDataRead().m_medIndivInfo
+
+    val medIndivInfoResponse = MedsRepo.getCachedData()
+
+    val knownMeds: MedIndivInfo = when (medIndivInfoResponse) {
+        is Resource.Success -> medIndivInfoResponse.data.apiData
+        else -> MedIndivInfo()
+    }
 
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        parsedMeds.value = medsRepo.medIndivDtoListAll()
+        parsedMeds.value = medsRepo.medIndivDtoListAll(context)
     }
 
     DisposableEffect(Unit) {
@@ -142,7 +154,7 @@ fun PrescriptionScanScreen(navController: NavController) {
                                             knownMeds.medIndivList
                                         )
                                         val existingMeds = parsedMeds.value
-                                        val novo = knownMeds.medIndivList.filter { it.medName.equals("NovoRapid", ignoreCase = true) }
+
                                         val uniqueMeds = newMeds.filter { newMed ->
                                             existingMeds.none { it.medName == newMed.medName }
                                         }
@@ -153,12 +165,12 @@ fun PrescriptionScanScreen(navController: NavController) {
 
                                             // ✅ Insert into Room
                                             coroutineScope.launch {
-                                                val iCount = medsRepo.medIndivDtoInsertAll(uniqueMeds)
+                                                val iCount = medsRepo.medIndivDtoInsertAll(context, uniqueMeds)
                                                 Log.e("Medication insert", "Insert count $iCount")
 
                                                 val medIndivActionInfo = MedIndivActionTx.from(uniqueMeds, '+', fbtUserUid)
 
-                                                MedsRepo(context).doMedIndivActionTx(medIndivActionInfo)
+                                                MedsRepo.doMedIndivActionTx(medIndivActionInfo)
                                             }
                                         }
                                     }
@@ -254,10 +266,10 @@ fun PrescriptionScanScreen(navController: NavController) {
 
                             // Delete from Room
                             coroutineScope.launch {
-                                medsRepo.medIndivDeleteByName(med.medName)
+                                medsRepo.medIndivDeleteByName(context, med.medName)
                                 val medIndivActionInfo = MedIndivActionTx.one(med.medName, '-', fbtUserUid)
 
-                                MedsRepo(context).doMedIndivActionTx(medIndivActionInfo)
+                                MedsRepo.doMedIndivActionTx(medIndivActionInfo)
 
                             }
                         }) {

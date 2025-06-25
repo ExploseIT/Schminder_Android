@@ -6,32 +6,49 @@ import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import uk.co.explose.schminder.android.SchminderApplication
 import uk.co.explose.schminder.android.core.AppDb
-import uk.co.explose.schminder.android.core.AppGlobal
+import uk.co.explose.schminder.android.core.AppRepo
 import uk.co.explose.schminder.android.core.App_Db
-import uk.co.explose.schminder.android.core.m_apg_data
+import uk.co.explose.schminder.android.model.firebase.FirebaseData
+import uk.co.explose.schminder.android.model.mpp.MedIndivInfo
 import uk.co.explose.schminder.android.model.mpp.MedsRepo
+import uk.co.explose.schminder.android.model.server.ServerRepo
+import uk.co.explose.schminder.android.model.server_version.ServerInfo
 import uk.co.explose.schminder.android.model.settings.AppSetting
 import uk.co.explose.schminder.android.model.settings.SettingsObj
 import uk.co.explose.schminder.android.model.settings.SettingsRepo
+import uk.co.explose.schminder.android.repo.Resource
 
 class SettingsScreenVM(private val context: Context) : ViewModel() {
 
-    val settingsRepo = SettingsRepo(context)
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    var settingsList by mutableStateOf<List<AppSetting>?>(null)
+    val medsRepo = MedsRepo
+
+    var settingsList by mutableStateOf<List<AppSetting>?>(emptyList())
         private set
 
-    var apg_data by mutableStateOf<m_apg_data?>(null)
-        private set
+    var settingsObj by mutableStateOf<SettingsObj>(SettingsObj())
+        internal
 
-    var isLoading by mutableStateOf(true)
-        private set
+    var isLoading by mutableStateOf<Boolean>(true)
 
     var errorMessage by mutableStateOf<String?>(null)
+        private set
+
+    var serverInfo by mutableStateOf<ServerInfo?>(null)
+
+    var medIndivInfo by mutableStateOf<MedIndivInfo>(MedIndivInfo())
+
+    var appData by mutableStateOf<FirebaseData?>(null)
         private set
 
     init {
@@ -42,31 +59,55 @@ class SettingsScreenVM(private val context: Context) : ViewModel() {
     fun loadVM() {
         viewModelScope.launch {
             isLoading = true
+            errorMessage = null
             try {
-                settingsList = loadSettings()
+                val data = AppRepo.loadAppData(context) // handles init + load
+                appData = data
 
-                // Step 1: Read current in-memory apg_data
-                var currentData = AppGlobal.doAPGDataRead()
-
-                // Step 2: If it's not fully loaded, try loading it
-                if (!currentData.isLoaded()) {
-                    val fbToken = currentData.mFirebaseToken
-                    if (fbToken != null) {
-                        AppGlobal.doAPGDataLoad(context, fbToken)
-                        currentData = AppGlobal.doAPGDataRead() // reload after populate
-                    } else {
-                        throw Exception("Missing Firebase token. Sign-in might have failed.")
+        ServerRepo.loadData(context)
+                serverInfo = when (val data = ServerRepo.getCachedData()) {
+                    is Resource.Success -> {
+                        var errorMessage = null
+                        var isLoading = false
+                        data.data.apiData
+                    }
+                    is Resource.Error -> {
+                        val errMsgRaw = data.message
+                        val errMsg = "Error loading data"
+                        errorMessage = errMsg
+                        ServerInfo.fromContext(context)
+                    }
+                    else -> {
+                        ServerInfo.fromContext(context)
+                    }
+                }
+                medsRepo.loadData(context)
+                medIndivInfo = when (val data = medsRepo.getCachedData()) {
+                    is Resource.Success -> {
+                        val md = data.data.apiData
+                        isLoading = false
+                        md
+                    }
+                    is Resource.Error -> {
+                        val errorMessageRaw = data.message
+                        val errMsg = "Error loading data"
+                        errorMessage = errMsg
+                        isLoading = false
+                        MedIndivInfo()
+                    }
+                    else -> {
+                        MedIndivInfo()
                     }
                 }
 
-                // Step 3: Store result in state
-                apg_data = currentData
-                errorMessage = null
+                settingsList = SettingsRepo.loadData(context)
+
+                settingsObj = SettingsRepo.loadSettingsObj(context)
 
             } catch (e: Exception) {
                 errorMessage = "Failed to load settings: ${e.localizedMessage}"
             } finally {
-                isLoading = false
+                //isLoading = false
             }
         }
     }
@@ -131,13 +172,7 @@ class SettingsScreenVM(private val context: Context) : ViewModel() {
 
     }
 
-    fun getSettingsObj() : SettingsObj {
-        var ret = SettingsObj()
-        viewModelScope.launch {
-            val ret = App_Db(context).getSettingsObj()
-        }
-        return ret
-    }
+
 
     suspend fun doesDescExist(key: String, desc: String) : Boolean {
         val dao = AppDb.getInstance(context).settingsDao()

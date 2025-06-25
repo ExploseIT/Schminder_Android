@@ -2,6 +2,7 @@ package uk.co.explose.schminder.android.model.settings
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import uk.co.explose.schminder.android.core.ApiResponse
 
 
 @Entity(tableName = "settingsTbl")
@@ -15,3 +16,4 @@ data class AppSetting(
     val setDesc: String
 )
 
+typealias AppSettingsResponse = ApiResponse<List<AppSetting>>

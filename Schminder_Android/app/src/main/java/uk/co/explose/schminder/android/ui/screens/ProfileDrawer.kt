@@ -24,7 +24,7 @@ fun ProfileDrawer(
         if (isGuest) {
             Text("Guest", style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.height(12.dp))
-            Button(onClick = onSignUp) { Text("Create Profile") }
+            Button(onClick = onSignUp) { Text("Create user name") }
             Spacer(Modifier.height(8.dp))
             Button(onClick = onLogin) { Text("Log In") }
         } else {

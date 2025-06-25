@@ -11,7 +11,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.compose.runtime.rememberCoroutineScope
-import uk.co.explose.schminder.android.core.AppGlobal
+import uk.co.explose.schminder.android.core.AppRepo
 import uk.co.explose.schminder.android.ui.viewmodels.SettingsScreenVM
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -23,11 +23,11 @@ fun AppInfoScreen(navController: NavHostController) {
 
     val coroutineScope = rememberCoroutineScope()
 
-    val apg_data = thisVM.apg_data
-    val isLoading = thisVM.isLoading
     val error = thisVM.errorMessage
 
-    AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - Settings"))
+    val isLoading = thisVM.isLoading
+
+    AppRepo.logEvent("test_event", mapOf("origin" to "Schminder - Settings"))
 
     LaunchedEffect(Unit) {
         thisVM.loadVM()
@@ -46,14 +46,23 @@ fun AppInfoScreen(navController: NavHostController) {
         ) {
             if (isLoading) {
                 Text("Loading...", style = MaterialTheme.typography.bodyLarge)
-            } else if (error != null) {
-                Text("Error loading data: $error", style = MaterialTheme.typography.bodyLarge)
-            } else if (apg_data!!.isLoaded()) {
-                Text("App Version: ${apg_data!!.m_versionName}", style = MaterialTheme.typography.bodyLarge)
+            } else if (true) {
+                Text("App Version: ${thisVM.serverInfo!!.svVersionApp}", style = MaterialTheme.typography.bodyLarge)
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Meds Loaded: ${apg_data!!.m_medIndivInfo!!.medIndivList.count()}", style = MaterialTheme.typography.bodyLarge)
+                Text("App Db Version: ${thisVM.serverInfo!!.svAppDb}", style = MaterialTheme.typography.bodyLarge)
+                Spacer(modifier = Modifier.height(20.dp))
+                Text("Meds Loaded: ${thisVM.medIndivInfo!!.medIndivList.count()}", style = MaterialTheme.typography.bodyLarge)
+                Spacer(modifier = Modifier.height(20.dp))
+                Text("Server version: ${thisVM.serverInfo!!.svVersionServer ?: "Loading..."}", style = MaterialTheme.typography.bodyLarge)
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Server Version: ${apg_data!!.m_serverVersion?.svVersion ?: "Loading..."}", style = MaterialTheme.typography.bodyLarge)
+                Text("Server db version: ${thisVM.serverInfo!!.svVersionDb ?: "Loading..."}", style = MaterialTheme.typography.bodyLarge)
+                Spacer(modifier = Modifier.height(24.dp))
+
+                if (error != null) {
+                    Text(": $error"
+                        , style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.error)
+)
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))

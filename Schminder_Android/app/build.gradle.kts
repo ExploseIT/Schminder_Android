@@ -31,7 +31,9 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
-            buildConfigField( "String", "BASE_URL",  "\"https://explose.ngrok.app/schminder_net/\"")
+             buildConfigField( "String", "BASE_URL",  "\"https://explose.ngrok.app/schminder_net/\"")
+
+            //buildConfigField( "String", "BASE_URL", "\"https://schminder.co.uk/\"")
         }
         release {
             isMinifyEnabled = false
@@ -85,6 +87,7 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     // Firebase Authentication
     implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-installations-ktx:17.1.4")
 
     implementation("androidx.room:room-runtime:2.7.1")
     kapt("androidx.room:room-compiler:2.7.1")
@@ -102,6 +105,7 @@ dependencies {
     implementation(libs.androidx.material3.window.size.class1)
     implementation(libs.androidx.material3.adaptive.navigation.suite)
     // implementation(libs.androidx.material3.adaptive.navigation)
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.1")
 
     implementation("androidx.compose.material3:material3:1.3.2")
 

@@ -4,6 +4,7 @@ package uk.co.explose.schminder.android.mapper
 import uk.co.explose.schminder.android.model.mpp.MedRepeatIntervalEnum
 import uk.co.explose.schminder.android.model.mpp.MedRepeatTypeEnum
 import uk.co.explose.schminder.android.model.mpp.MedScheduledWithMed
+import uk.co.explose.schminder.android.utils.dtObject
 import java.time.LocalDateTime
 import java.time.LocalTime
 
@@ -13,7 +14,7 @@ fun MedScheduledWithMed.toDisplayItem(): MedScheduledDisplayItem {
     else
         med.medTimeofday
     val derivedDT = if (med.medRepeatType == MedRepeatTypeEnum.Now)
-        LocalDateTime.now().withSecond(0).withNano(0)
+        dtObject().dtoNow.withSecond(0).withNano(0)
     else
         medScheduled.medDTSchedule
 

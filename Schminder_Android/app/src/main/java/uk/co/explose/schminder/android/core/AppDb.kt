@@ -23,6 +23,7 @@ import uk.co.explose.schminder.android.model.mpp.MedScheduled
 import uk.co.explose.schminder.android.model.mpp.MedScheduledWithMed
 import uk.co.explose.schminder.android.model.settings.AppSetting
 import uk.co.explose.schminder.android.model.settings.SettingsObj
+import uk.co.explose.schminder.android.model.server_version.DbConstants
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -189,7 +190,7 @@ interface MedsScheduledDao {
         MedScheduled::class,
         AppSetting::class
     ],
-    version = 23
+    version = DbConstants.ROOM_DB_VERSION //23 //BuildConfig.ROOM_DB_VERSION as Int // 23
 )
 
 @TypeConverters(Converters::class)

@@ -11,7 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
-import uk.co.explose.schminder.android.core.AppGlobal
+import uk.co.explose.schminder.android.core.AppRepo
 import uk.co.explose.schminder.android.ui.components.ManageItem
 import uk.co.explose.schminder.android.ui.components.SchminderTopBar
 
@@ -24,9 +24,7 @@ data class RefillItem(
 
 @Composable
 fun PlanScreen(navController: NavHostController) {
-    AppGlobal.logEvent("test_event", mapOf("origin" to "Schminder - Plan"))
-
-    val userName = AppGlobal.doAPGDataRead().mFirebaseTokenInfo?.fbtUserName ?: "Guest"
+    AppRepo.logEvent("test_event", mapOf("origin" to "Schminder - Plan"))
 
     val refillList = remember {
         listOf(

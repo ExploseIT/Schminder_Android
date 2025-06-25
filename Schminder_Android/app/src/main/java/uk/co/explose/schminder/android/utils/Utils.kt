@@ -10,6 +10,26 @@ import com.google.gson.JsonSerializer
 import java.lang.reflect.Type
 import java.time.OffsetDateTime
 import androidx.compose.material3.TimePickerState
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+
+
+object Utils {
+
+
+}
+class dtObject {
+    private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
+    private val dateTime = LocalDateTime.now() // LocalDateTime.parse("2025-06-09T23:17", formatter)
+
+    val dtoNow = dateTime
+    val dtoDay = dateTime.toLocalDate()
+    // Get time of day
+    val dtoTod: LocalTime = dateTime.toLocalTime()
+    val dtoDtNow = LocalDateTime.of(dtoDay, dtoTod)
+}
 
 class OffsetDateTimeAdapter : JsonDeserializer<OffsetDateTime>, JsonSerializer<OffsetDateTime> {
     override fun deserialize(
