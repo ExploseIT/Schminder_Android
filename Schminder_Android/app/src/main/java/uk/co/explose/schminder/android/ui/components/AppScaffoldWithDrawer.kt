@@ -11,11 +11,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-<<<<<<< HEAD
-=======
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
->>>>>>> dfd0eec (v1.0.1.16)
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
@@ -27,18 +24,12 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-<<<<<<< HEAD
-=======
 import androidx.compose.material3.TextButton
->>>>>>> dfd0eec (v1.0.1.16)
 import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-<<<<<<< HEAD
-=======
 import androidx.compose.runtime.collectAsState
->>>>>>> dfd0eec (v1.0.1.16)
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -68,9 +59,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-<<<<<<< HEAD
-import uk.co.explose.schminder.android.core.PreferencesKeys
-=======
 import uk.co.explose.schminder.android.core.ApiResponse
 import uk.co.explose.schminder.android.core.AppRepo
 import uk.co.explose.schminder.android.core.AppToast
@@ -79,7 +67,6 @@ import uk.co.explose.schminder.android.model.profile.UserProfileResponse
 import uk.co.explose.schminder.android.model.profile.enUserStatus
 import uk.co.explose.schminder.android.preferences.PrefRepo
 import uk.co.explose.schminder.android.repo.Resource
->>>>>>> dfd0eec (v1.0.1.16)
 
 val Context.dataStore by preferencesDataStore(name = "user_prefs")
 
@@ -146,19 +133,6 @@ fun AppScaffoldWithDrawer(
                     )
                 }
                 Divider()
-<<<<<<< HEAD
-                NavigationDrawerItem(
-                    label = { Text("Create Profile") },
-                    selected = false,
-                    onClick = {
-                        showCreateProfileDialog.value = true
-                    }
-                )
-                NavigationDrawerItem(
-                    label = { Text("Edit Profile") },
-                    selected = false,
-                    onClick = { /* TODO */ }
-=======
                 if (up.user_enabled == false) {
                     AnimatedDrawerItem(
                         text = "Username profile disabled",
@@ -190,7 +164,6 @@ fun AppScaffoldWithDrawer(
                 AnimatedDrawerItem(
                     text = "Send message or question?",
                     onClick = { AppToast(context).showToast("Coming in a following update") }
->>>>>>> dfd0eec (v1.0.1.16)
                 )
             }
         }
@@ -220,14 +193,6 @@ fun AppScaffoldWithDrawer(
             onConfirm = { username ->
                 showCreateProfileDialog.value = false
                 scope.launch {
-<<<<<<< HEAD
-                    val result = UserRepo(context).createProfile(username)
-                    result.onSuccess { message ->
-                        authMode.value = username
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                    }.onFailure { error ->
-                        Toast.makeText(context, error.localizedMessage ?: "Error", Toast.LENGTH_SHORT).show()
-=======
                     val resp = UserRepo.updateUsername(username)
                     val upp = when (resp) {
                         is Resource.Success -> {
@@ -263,7 +228,6 @@ fun AppScaffoldWithDrawer(
                     }
                     else if (up.apiData.user_alreadyexists == true) {
                         Toast.makeText(context, "Username already exists", Toast.LENGTH_SHORT).show()
->>>>>>> dfd0eec (v1.0.1.16)
                     }
                 }
             },
@@ -272,15 +236,8 @@ fun AppScaffoldWithDrawer(
             }
         )
     }
-<<<<<<< HEAD
-
 }
 
-
-=======
-}
-
->>>>>>> dfd0eec (v1.0.1.16)
 @Composable
 fun CreateProfileDialog(
     onConfirm: (String) -> Unit,
@@ -288,43 +245,15 @@ fun CreateProfileDialog(
 ) {
     val context = LocalContext.current
     var username by remember { mutableStateOf("Guest") }
-<<<<<<< HEAD
-
-    LaunchedEffect(Unit) {
-        // Load the last username when dialog opens
-        username = getUsername(context)
-=======
     val regex = Regex("^[A-Z][a-zA-Z0-9]{5,19}$") // 6 to 20 characters
 
     LaunchedEffect(Unit) {
         // Load the last username when dialog opens
         username = PrefRepo.getUsername(context)
->>>>>>> dfd0eec (v1.0.1.16)
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-<<<<<<< HEAD
-        title = { Text("Create Profile") },
-        text = {
-            Column {
-                Text("Choose a username")
-                TextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    placeholder = { Text("Username") }
-                )
-            }
-        },
-        confirmButton = {
-            Button(onClick = {
-                onConfirm(username)
-                // Save the username when confirmed
-                CoroutineScope(Dispatchers.IO).launch {
-                    saveUsername(context, username)
-                }
-            }) {
-=======
         title = {
             Text(
                 text = "Create Username Profile",
@@ -383,16 +312,11 @@ fun CreateProfileDialog(
                     }
                 }
             ) {
->>>>>>> dfd0eec (v1.0.1.16)
                 Text("Create")
             }
         },
         dismissButton = {
-<<<<<<< HEAD
-            Button(onClick = onDismiss) {
-=======
             TextButton(onClick = onDismiss) {
->>>>>>> dfd0eec (v1.0.1.16)
                 Text("Cancel")
             }
         }
@@ -400,18 +324,4 @@ fun CreateProfileDialog(
 }
 
 
-<<<<<<< HEAD
-suspend fun saveUsername(context: Context, username: String) {
-    context.dataStore.edit { prefs ->
-        prefs[PreferencesKeys.USERNAME] = username
-    }
-}
 
-suspend fun getUsername(context: Context): String {
-    return context.dataStore.data
-        .map { prefs -> prefs[PreferencesKeys.USERNAME] ?: "SchminderUser" }
-        .first()
-}
-=======
-
->>>>>>> dfd0eec (v1.0.1.16)

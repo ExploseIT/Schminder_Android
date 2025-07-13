@@ -324,6 +324,9 @@ abstract class AppDb : RoomDatabase() {
                     "schminder_db"
                 )
                     .addMigrations(MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23)
+                    .fallbackToDestructiveMigrationFrom( // fallback only for these legacy versions
+                        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
+                    )
                     .build()
                 INSTANCE = instance
                 instance

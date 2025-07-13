@@ -20,11 +20,7 @@ class WearMessageListener(private val context: Context) : MessageClient.OnMessag
 
                 if (medId != null && timestamp != null) {
                     CoroutineScope(Dispatchers.IO).launch {
-<<<<<<< HEAD
-                        MedsRepo(context).markMedicationAsTaken(medId)
-=======
                         MedsRepo.markMedicationAsTaken(context, medId)
->>>>>>> dfd0eec (v1.0.1.16)
                         //markMedicationAsTaken(medId, timestamp)
                     }
                 }

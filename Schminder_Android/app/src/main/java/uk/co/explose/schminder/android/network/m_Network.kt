@@ -27,34 +27,21 @@ import uk.co.explose.schminder.android.model.mpp.MedIndivInfo
 import uk.co.explose.schminder.android.model.mpp.MedIndivInfoResponse
 import uk.co.explose.schminder.android.model.mpp.medInfo
 import uk.co.explose.schminder.android.model.mpp.med_search_tx
-<<<<<<< HEAD
-import uk.co.explose.schminder.android.model.profile.UserProfileRequest
-import uk.co.explose.schminder.android.model.profile.UserProfileResponse
-import uk.co.explose.schminder.android.model.server_version.c_ServerVersion
-import uk.co.explose.schminder.android.model.user.UserProfile
-=======
 import uk.co.explose.schminder.android.model.profile.UserProfile
 import uk.co.explose.schminder.android.model.profile.UserProfileRequest
 import uk.co.explose.schminder.android.model.profile.UserProfileResponse
 import uk.co.explose.schminder.android.model.server_version.ServerInfoResponse
 import uk.co.explose.schminder.android.repo.Resource
->>>>>>> dfd0eec (v1.0.1.16)
 import uk.co.explose.schminder.android.utils.OffsetDateTimeAdapter
 import java.time.OffsetDateTime
 
 
 // --- API SERVICE ---
 interface ApiService {
-<<<<<<< HEAD
-    @POST("api/api_CreateProfileRequest")
-    suspend fun createProfile(@Body request: UserProfileRequest): Response<UserProfileResponse>
-
-=======
     @POST("api/api_UserProfileCreate")
     suspend fun userProfileCreate(@Body request: UserProfile): Response<UserProfileResponse>
     @POST("api/api_UserProfileReadByFirebase")
     suspend fun userProfileReadByFirebase(@Body request: UserProfile): Response<UserProfileResponse>
->>>>>>> dfd0eec (v1.0.1.16)
     @GET("api/users/profile")
     suspend fun getUserProfile(@Header("Authorization") token: String): Response<UserProfile>
 
