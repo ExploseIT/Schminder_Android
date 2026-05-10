@@ -10,19 +10,21 @@ plugins {
     // Add the Crashlytics Gradle plugin
     id("com.google.firebase.crashlytics")
 
-    id("kotlin-kapt")
+    //id("kotlin-kapt")
+    //id("com.google.devtools.ksp") version "2.3.4" apply false
+    id("com.google.devtools.ksp")
 }
 
 android {
     namespace = "uk.co.explose.schminder.android"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "uk.co.explose.schminder.android"
         minSdk = 27
-        targetSdk = 36
-        versionCode = 17
-        versionName = "1.0.1.17"
+        targetSdk = 37
+        versionCode = 20
+        versionName = "1.0.1.20"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -36,7 +38,8 @@ android {
             //buildConfigField( "String", "BASE_URL", "\"https://schminder.co.uk/\"")
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true // Enables R8 shrinking/obfuscation
+            isShrinkResources = true
             buildConfigField( "String", "BASE_URL", "\"https://schminder.co.uk/\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -49,20 +52,20 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
         isCoreLibraryDesugaringEnabled = true
     }
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
     }
     buildFeatures {
         viewBinding = true
         compose = true
         buildConfig = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.10" // or latest
-    }
 }
 
 dependencies {
+    implementation(libs.androidx.tracing)
     implementation(libs.androidbrowserhelper)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
@@ -70,27 +73,26 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material) // Can keep for some design compat
     implementation(libs.androidx.material.icons.extended)
-    implementation(libs.material.icons.extended)
 
 // build.gradle (app)
     implementation(libs.retrofit)
     implementation(libs.converter.moshi) // or Gson
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation(libs.converter.gson)
 
 
 // Import the Firebase BoM
-    implementation(platform("com.google.firebase:firebase-bom:33.12.0"))
+    implementation(platform(libs.firebase.bom))
 
     // Add the dependencies for the Crashlytics and Analytics libraries
     // When using the BoM, you don't specify versions in Firebase library dependencies
-    implementation("com.google.firebase:firebase-crashlytics")
-    implementation("com.google.firebase:firebase-analytics")
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.analytics)
     // Firebase Authentication
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-installations-ktx:17.1.4")
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.installations.ktx)
 
-    implementation("androidx.room:room-runtime:2.7.1")
-    kapt("androidx.room:room-compiler:2.7.1")
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
 
 
     // 🧱 Jetpack Compose core libraries
@@ -101,32 +103,29 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
 
     implementation(libs.androidx.material3.window.size.class1)
-    implementation(libs.androidx.material3.v132)
-    implementation(libs.androidx.material3.window.size.class1)
+    implementation(libs.androidx.material3.v140)
     implementation(libs.androidx.material3.adaptive.navigation.suite)
     // implementation(libs.androidx.material3.adaptive.navigation)
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.1")
+    implementation(libs.androidx.lifecycle.runtime.compose)
 
-    implementation("androidx.compose.material3:material3:1.3.2")
+    implementation(libs.accompanist.swiperefresh)
 
-    implementation("com.google.accompanist:accompanist-swiperefresh:0.33.2-alpha")
-
-    implementation("com.google.android.gms:play-services-wearable:19.0.0")
+    implementation(libs.play.services.wearable)
 
     // 🔁 Navigation for Compose
     implementation(libs.androidx.navigation.compose)
 
     // OCR ML Kit
-    implementation ("androidx.camera:camera-core:1.3.1")
-    implementation ("androidx.camera:camera-camera2:1.3.1")
-    implementation ("androidx.camera:camera-lifecycle:1.3.1")
-    implementation ("androidx.camera:camera-view:1.3.1")
+    implementation (libs.androidx.camera.core)
+    implementation (libs.androidx.camera.camera2)
+    implementation (libs.androidx.camera.lifecycle)
+    implementation (libs.androidx.camera.view)
 
-    implementation ("com.google.mlkit:text-recognition:16.0.0")
+    implementation (libs.text.recognition)
 
-    implementation ("com.google.accompanist:accompanist-permissions:0.35.0-alpha")
+    implementation (libs.accompanist.permissions)
 
-    implementation ("androidx.datastore:datastore-preferences:1.1.0")
+    implementation (libs.androidx.datastore.preferences)
 
 
     // 🧪 Testing
